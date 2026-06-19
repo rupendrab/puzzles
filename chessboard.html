@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Interactive Chessboard</title>
+  <link rel="icon" type="image/png" href="Wise_Man_Icon.png">
   <style>
     :root {
       color-scheme: light;
@@ -36,6 +37,24 @@
       display: grid;
       gap: 14px;
       justify-items: center;
+    }
+
+    .site-footer {
+      text-align: center;
+      color: #5a6777;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .site-footer a {
+      color: #2f80ed;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .site-footer a:hover,
+    .site-footer a:focus-visible {
+      text-decoration: underline;
     }
 
     h1 {
@@ -350,6 +369,10 @@
       <div class="rank-labels right" id="rightRanks" aria-hidden="true"></div>
       <div class="file-labels bottom" id="bottomFiles" aria-hidden="true"></div>
     </div>
+    <footer class="site-footer">
+      Rupendra Bandyopadhyay ·
+      <a href="https://www.linkedin.com/in/rupendra/" target="_blank" rel="noreferrer">LinkedIn</a>
+    </footer>
   </main>
 
   <div class="menu" id="menu" role="menu" aria-hidden="true">

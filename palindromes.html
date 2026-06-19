@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Palindromes</title>
+  <link rel="icon" type="image/png" href="Wise_Man_Icon.png">
   <style>
     :root {
       color-scheme: light;
@@ -190,6 +191,25 @@
       font-style: italic;
     }
 
+    .site-footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+      padding-bottom: 4px;
+    }
+
+    .site-footer a {
+      color: var(--accent);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .site-footer a:hover,
+    .site-footer a:focus-visible {
+      text-decoration: underline;
+    }
+
     @media (max-width: 720px) {
       .control-grid {
         grid-template-columns: 1fr;
@@ -232,6 +252,10 @@
     </section>
 
     <section class="results" id="results" aria-live="polite"></section>
+    <footer class="site-footer">
+      Rupendra Bandyopadhyay ·
+      <a href="https://www.linkedin.com/in/rupendra/" target="_blank" rel="noreferrer">LinkedIn</a>
+    </footer>
   </main>
 
   <script>

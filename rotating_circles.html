@@ -2,49 +2,181 @@
 <html>
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Circle Rolling Simulation</title>
+  <link rel="icon" type="image/png" href="Wise_Man_Icon.png">
   <style>
     body {
       font-family: Arial, sans-serif;
-      text-align: center;
       margin: 20px;
+      background: #fff;
+      color: #1f2933;
+    }
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 240px;
+      gap: 20px;
+      align-items: start;
+    }
+    .canvas-panel {
+      text-align: center;
     }
     canvas {
       border: 1px solid #ccc;
       background: #fafafa;
+      max-width: 100%;
+      height: auto;
+    }
+    .side-panel {
+      border: 1px solid #d6d9df;
+      border-radius: 10px;
+      background: #f8fafc;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .button-group {
+      display: grid;
+      gap: 8px;
     }
     button {
-      margin: 8px;
+      margin: 0;
       padding: 8px 14px;
       font-size: 15px;
+      width: 100%;
+    }
+    .controls {
+      display: grid;
+      gap: 8px;
+    }
+    label {
+      font-size: 15px;
+      font-weight: 600;
+    }
+    input[type="number"] {
+      width: 100%;
+      padding: 6px 8px;
+      font-size: 15px;
+      box-sizing: border-box;
+    }
+    #info {
+      margin: 0;
+      line-height: 1.5;
+      font-size: 15px;
+    }
+    .notes {
+      max-width: 980px;
+      margin: 18px auto 0;
+      padding: 14px 16px;
+      border: 1px solid #d6d9df;
+      border-radius: 10px;
+      background: #f8fafc;
+      line-height: 1.55;
+    }
+    .notes h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+    .notes p {
+      margin: 8px 0 0;
+    }
+    .notes ul {
+      margin: 8px 0 0;
+      padding-left: 22px;
+    }
+    .notes li + li {
+      margin-top: 6px;
+    }
+
+    .site-footer {
+      max-width: 980px;
+      margin: 18px auto 0;
+      text-align: center;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: #52606d;
+    }
+
+    .site-footer a {
+      color: #2f80ed;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .site-footer a:hover,
+    .site-footer a:focus-visible {
+      text-decoration: underline;
+    }
+    @media (max-width: 760px) {
+      .page {
+        grid-template-columns: 1fr;
+      }
+
+      .side-panel {
+        order: 2;
+      }
     }
   </style>
 </head>
 <body>
+<div class="page">
+  <div class="canvas-panel">
+    <h2>Small Circle Rolling Around / Inside Large Circle</h2>
+    <canvas id="canvas" width="700" height="500"></canvas>
+  </div>
 
-<h2>Small Circle Rolling Around / Inside Large Circle</h2>
+  <aside class="side-panel">
+    <div class="controls">
+      <label for="ratioInput">Large-to-small radius ratio</label>
+      <input id="ratioInput" type="number" min="1" step="0.1" value="2">
+      <button onclick="applyRatio()">Apply</button>
+    </div>
 
-<canvas id="canvas" width="700" height="500"></canvas>
+    <div class="button-group">
+      <button onclick="mode='outside'; reset()">Outside Rolling</button>
+      <button onclick="mode='inside'; reset()">Inside Rolling</button>
+      <button onclick="startAnimation()">Start / Restart</button>
+      <button onclick="togglePause()">Pause / Resume</button>
+    </div>
 
-<br />
+    <p id="info"></p>
+  </aside>
+</div>
 
-<button onclick="mode='outside'; reset()">Outside Rolling</button>
-<button onclick="mode='inside'; reset()">Inside Rolling</button>
-<button onclick="startAnimation()">Start / Restart</button>
-<button onclick="togglePause()">Pause / Resume</button>
+<section class="notes">
+  <h3>About This Page</h3>
+  <p>
+    This animation shows a small circle rolling either outside or inside a larger circle.
+    The red line marks the rotation of the small circle, so you can compare the visible turning
+    with the expected number of rotations after one full trip.
+  </p>
+  <ul>
+    <li>Set the large-to-small radius ratio, then click <b>Apply</b> to redraw the circles.</li>
+    <li>Choose <b>Outside Rolling</b> or <b>Inside Rolling</b> to switch the type of motion.</li>
+    <li>Click <b>Start / Restart</b> to begin from the top position.</li>
+    <li>Use <b>Pause / Resume</b> to stop or continue an animation that is in progress.</li>
+    <li>The animation stops automatically after one full orbit so the final rotation count stays visible.</li>
+  </ul>
+</section>
 
-<p id="info"></p>
+<footer class="site-footer">
+  Rupendra Bandyopadhyay ·
+  <a href="https://www.linkedin.com/in/rupendra/" target="_blank" rel="noreferrer">LinkedIn</a>
+</footer>
 
 <script>
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const info = document.getElementById("info");
+const ratioInput = document.getElementById("ratioInput");
 
 const cx = canvas.width / 2;
 const cy = canvas.height / 2;
 
-const r = 60;        // small circle radius
-const R = 2 * r;     // large circle radius
+const maxOrbitRadius = Math.min(canvas.width, canvas.height) * 0.38;
+let radiusRatio = 2;
 
 let theta = 0;
 let mode = "outside";
@@ -69,6 +201,18 @@ function togglePause() {
   running = !running;
 }
 
+function applyRatio() {
+  const nextRatio = Number(ratioInput.value);
+
+  if (!Number.isFinite(nextRatio) || nextRatio < 1) {
+    ratioInput.value = String(radiusRatio);
+    return;
+  }
+
+  radiusRatio = nextRatio;
+  reset();
+}
+
 function drawCircle(x, y, radius, color) {
   ctx.beginPath();
   ctx.arc(x, y, radius, 0, Math.PI * 2);
@@ -88,6 +232,8 @@ function drawLine(x1, y1, x2, y2, color) {
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const smallRadius = maxOrbitRadius / (radiusRatio + 2);
+  const R = radiusRatio * smallRadius;
 
   // Large fixed circle
   drawCircle(cx, cy, R, "black");
@@ -95,12 +241,12 @@ function draw() {
   let pathRadius, rotations, spinAngle;
 
   if (mode === "outside") {
-    pathRadius = R + r;
-    rotations = (R + r) / r;
+    pathRadius = R + smallRadius;
+    rotations = (R + smallRadius) / smallRadius;
     spinAngle = rotations * theta;
   } else {
-    pathRadius = R - r;
-    rotations = (R - r) / r;
+    pathRadius = R - smallRadius;
+    rotations = (R - smallRadius) / smallRadius;
     spinAngle = -rotations * theta;
   }
 
@@ -117,11 +263,11 @@ function draw() {
   ctx.setLineDash([]);
 
   // Small rolling circle
-  drawCircle(x, y, r, "blue");
+  drawCircle(x, y, smallRadius, "blue");
 
   // Radius marker showing rotation of small circle
-  const markerX = x + r * Math.cos(spinAngle);
-  const markerY = y + r * Math.sin(spinAngle);
+  const markerX = x + smallRadius * Math.cos(spinAngle);
+  const markerY = y + smallRadius * Math.sin(spinAngle);
   drawLine(x, y, markerX, markerY, "red");
 
   // Center point
@@ -134,6 +280,7 @@ function draw() {
 
   info.innerHTML =
     `<b>Mode:</b> ${mode} rolling<br>` +
+    `<b>Radius ratio (large/small):</b> ${radiusRatio}<br>` +
     `<b>Expected rotations after one full trip:</b> ${rotations}<br>` +
     `<b>Current rotations:</b> ${completedRotations.toFixed(2)}`;
 

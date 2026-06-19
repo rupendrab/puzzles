@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>In Girum Imus</title>
+  <link rel="icon" type="image/png" href="Wise_Man_Icon.png">
   <style>
     :root {
       color-scheme: light;
@@ -217,6 +218,24 @@
       font-size: 0.92rem;
     }
 
+    .site-footer {
+      text-align: center;
+      color: #5b4c41;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .site-footer a {
+      color: #b15d39;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .site-footer a:hover,
+    .site-footer a:focus-visible {
+      text-decoration: underline;
+    }
+
     @keyframes flicker {
       0%, 100% {
         transform: translateX(var(--shift)) scaleY(var(--stretch)) rotate(var(--twist));
@@ -262,6 +281,10 @@
       <button class="button" type="button" id="exportVideoButton">Export Video</button>
       <p class="status" id="exportStatus" aria-live="polite"></p>
     </div>
+    <footer class="site-footer">
+      Rupendra Bandyopadhyay ·
+      <a href="https://www.linkedin.com/in/rupendra/" target="_blank" rel="noreferrer">LinkedIn</a>
+    </footer>
   </main>
 
   <script>

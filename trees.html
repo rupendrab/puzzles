@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tree Grid with Lines</title>
+  <link rel="icon" type="image/png" href="Wise_Man_Icon.png" />
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     body {
@@ -230,6 +231,25 @@
       font-family: monospace;
       font-size: 12px;
     }
+
+    .site-footer {
+      margin: 18px 0 24px;
+      color: #52606d;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .site-footer a {
+      color: #2f80ed;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .site-footer a:hover,
+    .site-footer a:focus-visible {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -314,6 +334,10 @@
     <div class="menu-item" data-action="highlight">Highlight</div>
     <div class="menu-item" data-action="normal">Normal</div>
   </div>
+  <footer class="site-footer">
+    Rupendra Bandyopadhyay ·
+    <a href="https://www.linkedin.com/in/rupendra/" target="_blank" rel="noreferrer">LinkedIn</a>
+  </footer>
 
   <script>
     const n = 7;
