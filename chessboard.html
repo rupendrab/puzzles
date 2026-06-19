@@ -1,0 +1,899 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Interactive Chessboard</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --board-size: min(82vmin, 680px);
+      --coord-size: clamp(20px, 4vmin, 34px);
+      --light-square: #f0d9b5;
+      --dark-square: #b58863;
+      --ink: #1f2933;
+      --panel: #ffffff;
+      --border: #d6d9df;
+      --shadow: 0 12px 30px rgba(24, 31, 42, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #eef2f6;
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      width: min(94vw, 760px);
+      display: grid;
+      gap: 14px;
+      justify-items: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 750;
+      line-height: 1.05;
+      text-align: center;
+      letter-spacing: 0;
+    }
+
+    .board {
+      grid-column: 2;
+      grid-row: 2;
+      width: var(--board-size);
+      aspect-ratio: 1;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(8, 1fr);
+      border: 10px solid #3b2b24;
+      box-shadow: var(--shadow);
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .board-shell {
+      display: grid;
+      grid-template-columns: var(--coord-size) var(--board-size) var(--coord-size);
+      grid-template-rows: var(--coord-size) var(--board-size) var(--coord-size);
+      align-items: center;
+      justify-items: center;
+    }
+
+    .toolbar {
+      width: calc(var(--board-size) + (2 * var(--coord-size)));
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .picker {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #263241;
+      font: 700 0.95rem / 1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .piece-picker {
+      margin-right: auto;
+    }
+
+    .picker select {
+      min-height: 38px;
+      border: 1px solid #b8c0cc;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #263241;
+      font: 650 0.95rem / 1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      cursor: pointer;
+      padding: 0 34px 0 10px;
+      box-shadow: 0 2px 8px rgba(24, 31, 42, 0.08);
+    }
+
+    .picker select:focus-visible {
+      outline: 3px solid #2f80ed;
+      outline-offset: 2px;
+    }
+
+    .toolbar-button {
+      min-height: 38px;
+      border: 1px solid #b8c0cc;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #263241;
+      font: 700 0.95rem / 1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      cursor: pointer;
+      padding: 0 14px;
+      box-shadow: 0 2px 8px rgba(24, 31, 42, 0.08);
+    }
+
+    .toolbar-button:hover,
+    .toolbar-button:focus-visible {
+      background: #f7f9fc;
+      outline: 3px solid #2f80ed;
+      outline-offset: 2px;
+    }
+
+    .toolbar-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+      box-shadow: none;
+    }
+
+    .coord {
+      color: #3b2b24;
+      font-size: clamp(0.78rem, 2.4vmin, 1rem);
+      font-weight: 750;
+      line-height: 1;
+    }
+
+    .file-labels {
+      width: var(--board-size);
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      justify-items: center;
+    }
+
+    .file-labels.top {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .file-labels.bottom {
+      grid-column: 2;
+      grid-row: 3;
+    }
+
+    .rank-labels {
+      height: var(--board-size);
+      display: grid;
+      grid-template-rows: repeat(8, 1fr);
+      align-items: center;
+    }
+
+    .rank-labels.left {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .rank-labels.right {
+      grid-column: 3;
+      grid-row: 2;
+    }
+
+    .square {
+      appearance: none;
+      border: 0;
+      border-radius: 0;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      background: var(--light-square);
+      cursor: pointer;
+      touch-action: none;
+    }
+
+    .square.dark {
+      background: var(--dark-square);
+    }
+
+    .square.drag-source {
+      opacity: 0.45;
+    }
+
+    .square.drop-target {
+      outline: 4px solid #2f80ed;
+      outline-offset: -4px;
+      z-index: 1;
+    }
+
+    .square:focus-visible {
+      outline: 4px solid #2f80ed;
+      outline-offset: -4px;
+      z-index: 1;
+    }
+
+    .piece {
+      width: 78%;
+      height: 78%;
+      display: block;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .menu {
+      position: fixed;
+      display: none;
+      min-width: 120px;
+      padding: 6px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      z-index: 10;
+    }
+
+    .menu.open {
+      display: block;
+    }
+
+    .menu button {
+      width: 100%;
+      min-height: 38px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #a12727;
+      font: 650 0.95rem / 1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      text-align: left;
+      cursor: pointer;
+      padding: 0 12px;
+    }
+
+    .menu button:hover,
+    .menu button:focus-visible {
+      background: #fbeaea;
+      outline: none;
+    }
+
+    .help-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      padding: 20px;
+      background: rgba(24, 31, 42, 0.38);
+      z-index: 20;
+    }
+
+    .help-overlay.open {
+      display: grid;
+    }
+
+    .help-panel {
+      width: min(92vw, 420px);
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+
+    .help-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .help-header h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .close-help {
+      width: 34px;
+      height: 34px;
+      border: 1px solid #b8c0cc;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #263241;
+      font: 800 1.25rem / 1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      cursor: pointer;
+    }
+
+    .close-help:hover,
+    .close-help:focus-visible {
+      background: #f7f9fc;
+      outline: 3px solid #2f80ed;
+      outline-offset: 2px;
+    }
+
+    .help-list {
+      margin: 0;
+      padding-left: 22px;
+      color: #263241;
+      line-height: 1.55;
+    }
+
+    .help-list li + li {
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Chessboard</h1>
+    <div class="toolbar">
+      <label class="picker piece-picker" for="pieceSelect">
+        Piece
+        <select id="pieceSelect">
+          <option value="king">King</option>
+          <option value="queen">Queen</option>
+          <option value="rook">Rook</option>
+          <option value="bishop">Bishop</option>
+          <option value="knight">Knight</option>
+          <option value="pawn">Pawn</option>
+        </select>
+      </label>
+      <label class="picker" for="colorSelect">
+        Color
+        <select id="colorSelect">
+          <option value="black">Black</option>
+          <option value="white">White</option>
+        </select>
+      </label>
+      <button type="button" class="toolbar-button" id="helpButton">Help</button>
+      <button type="button" class="toolbar-button" id="undoButton" disabled>Undo</button>
+      <button type="button" class="toolbar-button" id="clearButton">Clear Board</button>
+      <button type="button" class="toolbar-button" id="downloadButton">Download SVG</button>
+      <button type="button" class="toolbar-button" id="downloadPngButton">Download PNG</button>
+    </div>
+    <div class="board-shell" aria-label="Chessboard with coordinates">
+      <div class="file-labels top" id="topFiles" aria-hidden="true"></div>
+      <div class="rank-labels left" id="leftRanks" aria-hidden="true"></div>
+      <div class="board" id="board" aria-label="Interactive chessboard"></div>
+      <div class="rank-labels right" id="rightRanks" aria-hidden="true"></div>
+      <div class="file-labels bottom" id="bottomFiles" aria-hidden="true"></div>
+    </div>
+  </main>
+
+  <div class="menu" id="menu" role="menu" aria-hidden="true">
+    <button type="button" id="deleteButton" role="menuitem">Delete</button>
+  </div>
+
+  <div class="help-overlay" id="helpOverlay" aria-hidden="true">
+    <section class="help-panel" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <div class="help-header">
+        <h2 id="helpTitle">Quick Help</h2>
+        <button type="button" class="close-help" id="closeHelpButton" aria-label="Close help">×</button>
+      </div>
+      <ul class="help-list">
+        <li>Choose a piece from the Piece menu.</li>
+        <li>Choose a color from the Color menu.</li>
+        <li>Click an empty square to place the selected piece and color.</li>
+        <li>Click a piece to toggle it between black and white.</li>
+        <li>Drag a piece to another square to move it, replacing any piece there.</li>
+        <li>Right-click or long-press a piece and choose Delete to clear that square.</li>
+        <li>Use Undo to reverse the last board change.</li>
+        <li>Use Clear Board to remove all pieces.</li>
+        <li>Use Download SVG to save the current board.</li>
+        <li>Use Download PNG to save a raster image of the current board.</li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    const board = document.getElementById("board");
+    const topFiles = document.getElementById("topFiles");
+    const bottomFiles = document.getElementById("bottomFiles");
+    const leftRanks = document.getElementById("leftRanks");
+    const rightRanks = document.getElementById("rightRanks");
+    const menu = document.getElementById("menu");
+    const deleteButton = document.getElementById("deleteButton");
+    const helpButton = document.getElementById("helpButton");
+    const helpOverlay = document.getElementById("helpOverlay");
+    const closeHelpButton = document.getElementById("closeHelpButton");
+    const undoButton = document.getElementById("undoButton");
+    const clearButton = document.getElementById("clearButton");
+    const downloadButton = document.getElementById("downloadButton");
+    const downloadPngButton = document.getElementById("downloadPngButton");
+    const pieceSelect = document.getElementById("pieceSelect");
+    const colorSelect = document.getElementById("colorSelect");
+    const pieceImages = {
+      black: {
+        king: "chess-pieces/black-king.svg",
+        queen: "chess-pieces/black-queen.svg",
+        rook: "chess-pieces/black-rook.svg",
+        bishop: "chess-pieces/black-bishop.svg",
+        knight: "chess-pieces/black-knight.svg",
+        pawn: "chess-pieces/black-pawn.svg"
+      },
+      white: {
+        king: "chess-pieces/white-king.svg",
+        queen: "chess-pieces/white-queen.svg",
+        rook: "chess-pieces/white-rook.svg",
+        bishop: "chess-pieces/white-bishop.svg",
+        knight: "chess-pieces/white-knight.svg",
+        pawn: "chess-pieces/white-pawn.svg"
+      }
+    };
+    let menuSquare = null;
+    let dragState = null;
+    let longPressTimer = null;
+    let suppressNextClick = false;
+    const history = [];
+    const svgPieceSymbols = {
+      black: {
+        king: "\u265A",
+        queen: "\u265B",
+        rook: "\u265C",
+        bishop: "\u265D",
+        knight: "\u265E",
+        pawn: "\u265F"
+      },
+      white: {
+        king: "\u2654",
+        queen: "\u2655",
+        rook: "\u2656",
+        bishop: "\u2657",
+        knight: "\u2658",
+        pawn: "\u2659"
+      }
+    };
+
+    function hideMenu() {
+      menu.classList.remove("open");
+      menu.setAttribute("aria-hidden", "true");
+      menuSquare = null;
+    }
+
+    function showHelp() {
+      hideMenu();
+      helpOverlay.classList.add("open");
+      helpOverlay.setAttribute("aria-hidden", "false");
+      closeHelpButton.focus();
+    }
+
+    function hideHelp() {
+      helpOverlay.classList.remove("open");
+      helpOverlay.setAttribute("aria-hidden", "true");
+    }
+
+    function showMenu(event, square) {
+      menuSquare = square;
+      menu.classList.add("open");
+      menu.setAttribute("aria-hidden", "false");
+
+      const menuWidth = menu.offsetWidth;
+      const menuHeight = menu.offsetHeight;
+      const left = Math.min(event.clientX, window.innerWidth - menuWidth - 8);
+      const top = Math.min(event.clientY, window.innerHeight - menuHeight - 8);
+
+      menu.style.left = `${Math.max(8, left)}px`;
+      menu.style.top = `${Math.max(8, top)}px`;
+      deleteButton.focus();
+    }
+
+    function clearLongPressTimer() {
+      if (!longPressTimer) {
+        return;
+      }
+
+      window.clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+
+    function setPiece(square, type, color) {
+      square.dataset.piece = type;
+      square.dataset.color = color;
+      square.replaceChildren();
+
+      const piece = document.createElement("img");
+      piece.className = "piece";
+      piece.src = pieceImages[color][type];
+      piece.alt = `${color} ${type}`;
+      piece.draggable = false;
+      square.appendChild(piece);
+      square.setAttribute("aria-label", `${color} ${type} on ${square.dataset.coord}`);
+    }
+
+    function clearSquare(square) {
+      delete square.dataset.piece;
+      delete square.dataset.color;
+      square.replaceChildren();
+      square.setAttribute("aria-label", `empty square ${square.dataset.coord}`);
+    }
+
+    function readBoardState() {
+      return Array.from(board.querySelectorAll(".square"), (square) => {
+        if (!square.dataset.piece || !square.dataset.color) {
+          return "";
+        }
+
+        return `${square.dataset.piece}:${square.dataset.color}`;
+      });
+    }
+
+    function restoreBoardState(state) {
+      board.querySelectorAll(".square").forEach((square, index) => {
+        const value = state[index];
+
+        if (value) {
+          const [type, color] = value.split(":");
+          setPiece(square, type, color);
+        } else {
+          clearSquare(square);
+        }
+      });
+    }
+
+    function saveForUndo() {
+      history.push(readBoardState());
+      undoButton.disabled = false;
+    }
+
+    function boardHasPieces() {
+      return Boolean(board.querySelector(".square[data-piece]"));
+    }
+
+    function getSquareFromPoint(clientX, clientY) {
+      return document.elementFromPoint(clientX, clientY)?.closest(".square");
+    }
+
+    function getPieceState(square) {
+      if (!square.dataset.piece || !square.dataset.color) {
+        return null;
+      }
+
+      return {
+        type: square.dataset.piece,
+        color: square.dataset.color
+      };
+    }
+
+    function clearDropTarget() {
+      board.querySelectorAll(".drop-target").forEach((square) => {
+        square.classList.remove("drop-target");
+      });
+    }
+
+    function cancelDrag() {
+      if (!dragState) {
+        return;
+      }
+
+      if (dragState.source.hasPointerCapture?.(dragState.pointerId)) {
+        dragState.source.releasePointerCapture(dragState.pointerId);
+      }
+      dragState.source.classList.remove("drag-source");
+      clearDropTarget();
+      dragState = null;
+    }
+
+    function movePiece(source, target) {
+      const sourcePiece = getPieceState(source);
+
+      if (!sourcePiece || source === target) {
+        return false;
+      }
+
+      saveForUndo();
+      setPiece(target, sourcePiece.type, sourcePiece.color);
+      clearSquare(source);
+      return true;
+    }
+
+    function escapeXml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function buildBoardSvg() {
+      const squareSize = 80;
+      const coordSize = 34;
+      const boardSize = squareSize * 8;
+      const svgSize = boardSize + (coordSize * 2);
+      const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
+      const ranks = ["8", "7", "6", "5", "4", "3", "2", "1"];
+      const parts = [
+        `<?xml version="1.0" encoding="UTF-8"?>`,
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${svgSize}" height="${svgSize}" viewBox="0 0 ${svgSize} ${svgSize}" role="img" aria-label="Chessboard snapshot">`,
+        `<rect width="100%" height="100%" fill="#eef2f6"/>`,
+        `<rect x="${coordSize - 10}" y="${coordSize - 10}" width="${boardSize + 20}" height="${boardSize + 20}" fill="#3b2b24"/>`
+      ];
+
+      files.forEach((file, index) => {
+        const x = coordSize + (index * squareSize) + (squareSize / 2);
+        parts.push(`<text x="${x}" y="22" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#3b2b24">${file}</text>`);
+        parts.push(`<text x="${x}" y="${svgSize - 12}" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#3b2b24">${file}</text>`);
+      });
+
+      ranks.forEach((rank, index) => {
+        const y = coordSize + (index * squareSize) + (squareSize / 2) + 6;
+        parts.push(`<text x="16" y="${y}" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#3b2b24">${rank}</text>`);
+        parts.push(`<text x="${svgSize - 16}" y="${y}" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#3b2b24">${rank}</text>`);
+      });
+
+      board.querySelectorAll(".square").forEach((square) => {
+        const row = Number(square.dataset.row);
+        const col = Number(square.dataset.col);
+        const x = coordSize + (col * squareSize);
+        const y = coordSize + (row * squareSize);
+        const fill = (row + col) % 2 ? "#b58863" : "#f0d9b5";
+        parts.push(`<rect x="${x}" y="${y}" width="${squareSize}" height="${squareSize}" fill="${fill}"/>`);
+
+        const piece = getPieceState(square);
+        if (!piece) {
+          return;
+        }
+
+        const symbol = escapeXml(svgPieceSymbols[piece.color][piece.type]);
+        const pieceFill = piece.color === "white" ? "#f8fafc" : "#111827";
+        const pieceStroke = piece.color === "white" ? "#111827" : "#f8fafc";
+        parts.push(`<text x="${x + (squareSize / 2)}" y="${y + 59}" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="62" font-weight="700" fill="${pieceFill}" stroke="${pieceStroke}" stroke-width="2" paint-order="stroke fill">${symbol}</text>`);
+      });
+
+      parts.push(`</svg>`);
+      return parts.join("\n");
+    }
+
+    function downloadBoardSvg() {
+      hideMenu();
+      hideHelp();
+
+      const svg = buildBoardSvg();
+      const blob = new Blob([svg], { type: "image/svg+xml" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+
+      link.href = url;
+      link.download = `chessboard-${timestamp}.svg`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadBoardPng() {
+      hideMenu();
+      hideHelp();
+
+      const svg = buildBoardSvg();
+      const svgBlob = new Blob([svg], { type: "image/svg+xml" });
+      const url = URL.createObjectURL(svgBlob);
+      const image = new Image();
+
+      image.addEventListener("load", () => {
+        const canvas = document.createElement("canvas");
+        const scale = 2;
+        canvas.width = image.width * scale;
+        canvas.height = image.height * scale;
+
+        const context = canvas.getContext("2d");
+        context.imageSmoothingEnabled = true;
+        context.imageSmoothingQuality = "high";
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob((pngBlob) => {
+          URL.revokeObjectURL(url);
+
+          if (!pngBlob) {
+            return;
+          }
+
+          const pngUrl = URL.createObjectURL(pngBlob);
+          const link = document.createElement("a");
+          const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+
+          link.href = pngUrl;
+          link.download = `chessboard-${timestamp}.png`;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(pngUrl);
+        }, "image/png");
+      });
+
+      image.addEventListener("error", () => {
+        URL.revokeObjectURL(url);
+      });
+
+      image.src = url;
+    }
+
+    function addLabels(container, labels) {
+      labels.forEach((label) => {
+        const item = document.createElement("span");
+        item.className = "coord";
+        item.textContent = label;
+        container.appendChild(item);
+      });
+    }
+
+    addLabels(topFiles, ["a", "b", "c", "d", "e", "f", "g", "h"]);
+    addLabels(bottomFiles, ["a", "b", "c", "d", "e", "f", "g", "h"]);
+    addLabels(leftRanks, ["8", "7", "6", "5", "4", "3", "2", "1"]);
+    addLabels(rightRanks, ["8", "7", "6", "5", "4", "3", "2", "1"]);
+
+    for (let row = 0; row < 8; row += 1) {
+      for (let col = 0; col < 8; col += 1) {
+        const square = document.createElement("button");
+        const coord = `${String.fromCharCode(97 + col)}${8 - row}`;
+        square.type = "button";
+        square.className = `square${(row + col) % 2 ? " dark" : ""}`;
+        square.dataset.row = row;
+        square.dataset.col = col;
+        square.dataset.coord = coord;
+        square.setAttribute("aria-label", `empty square ${coord}`);
+
+        square.addEventListener("pointerdown", (event) => {
+          if (event.button !== 0 || !square.dataset.piece) {
+            return;
+          }
+
+          dragState = {
+            source: square,
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            didMove: false
+          };
+          square.setPointerCapture(event.pointerId);
+
+          clearLongPressTimer();
+          longPressTimer = window.setTimeout(() => {
+            if (!dragState || dragState.pointerId !== event.pointerId || dragState.didMove) {
+              return;
+            }
+
+            suppressNextClick = true;
+            showMenu(event, square);
+            cancelDrag();
+          }, 550);
+        });
+
+        square.addEventListener("pointermove", (event) => {
+          if (!dragState || dragState.pointerId !== event.pointerId) {
+            return;
+          }
+
+          const deltaX = event.clientX - dragState.startX;
+          const deltaY = event.clientY - dragState.startY;
+          const hasMovedFarEnough = Math.hypot(deltaX, deltaY) > 8;
+
+          if (!dragState.didMove && hasMovedFarEnough) {
+            hideMenu();
+            clearLongPressTimer();
+            dragState.didMove = true;
+            dragState.source.classList.add("drag-source");
+          }
+
+          if (!dragState.didMove) {
+            return;
+          }
+
+          clearDropTarget();
+
+          const target = getSquareFromPoint(event.clientX, event.clientY);
+          if (target && target !== dragState.source) {
+            target.classList.add("drop-target");
+          }
+        });
+
+        square.addEventListener("pointerup", (event) => {
+          if (!dragState || dragState.pointerId !== event.pointerId) {
+            return;
+          }
+
+          const target = getSquareFromPoint(event.clientX, event.clientY);
+          const shouldMove = dragState.didMove && target && target !== dragState.source;
+
+          if (shouldMove) {
+            suppressNextClick = movePiece(dragState.source, target);
+          }
+
+          clearLongPressTimer();
+          cancelDrag();
+        });
+
+        square.addEventListener("pointercancel", () => {
+          clearLongPressTimer();
+          cancelDrag();
+        });
+
+        square.addEventListener("click", () => {
+          if (suppressNextClick) {
+            suppressNextClick = false;
+            return;
+          }
+
+          hideMenu();
+          saveForUndo();
+
+          if (!square.dataset.piece) {
+            setPiece(square, pieceSelect.value, colorSelect.value);
+            return;
+          }
+
+          setPiece(
+            square,
+            square.dataset.piece,
+            square.dataset.color === "black" ? "white" : "black"
+          );
+        });
+
+        square.addEventListener("contextmenu", (event) => {
+          event.preventDefault();
+          clearLongPressTimer();
+
+          if (square.dataset.piece) {
+            showMenu(event, square);
+          } else {
+            hideMenu();
+          }
+        });
+
+        board.appendChild(square);
+      }
+    }
+
+    undoButton.addEventListener("click", () => {
+      const previousState = history.pop();
+
+      if (!previousState) {
+        return;
+      }
+
+      restoreBoardState(previousState);
+      undoButton.disabled = history.length === 0;
+      hideMenu();
+    });
+
+    deleteButton.addEventListener("click", () => {
+      if (!menuSquare) {
+        return;
+      }
+
+      saveForUndo();
+      clearSquare(menuSquare);
+      hideMenu();
+    });
+
+    clearButton.addEventListener("click", () => {
+      if (!boardHasPieces()) {
+        hideMenu();
+        return;
+      }
+
+      saveForUndo();
+      board.querySelectorAll(".square").forEach(clearSquare);
+      hideMenu();
+    });
+
+    downloadButton.addEventListener("click", downloadBoardSvg);
+    downloadPngButton.addEventListener("click", downloadBoardPng);
+    helpButton.addEventListener("click", showHelp);
+    closeHelpButton.addEventListener("click", hideHelp);
+
+    helpOverlay.addEventListener("click", (event) => {
+      if (event.target === helpOverlay) {
+        hideHelp();
+      }
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!menu.contains(event.target)) {
+        hideMenu();
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        hideMenu();
+        hideHelp();
+      }
+    });
+
+    window.addEventListener("resize", hideMenu);
+  </script>
+</body>
+</html>

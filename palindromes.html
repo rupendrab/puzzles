@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Palindromes</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1f2933;
+      --muted: #5a6777;
+      --panel: #ffffff;
+      --border: #d6d9df;
+      --accent: #2f80ed;
+      --shadow: 0 12px 30px rgba(24, 31, 42, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #eef2f6;
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      width: min(96vw, 1100px);
+      margin: 0 auto;
+      padding: 28px 0 36px;
+      display: grid;
+      gap: 18px;
+    }
+
+    header {
+      display: grid;
+      gap: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4.8vw, 3rem);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .byline {
+      font-size: 0.92rem;
+    }
+
+    .intro,
+    .controls,
+    .section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .intro,
+    .section,
+    .controls {
+      display: grid;
+      gap: 12px;
+    }
+
+    .intro h2,
+    .section h2 {
+      margin: 0;
+      font-size: 1.18rem;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .control-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 180px;
+      gap: 12px;
+      align-items: start;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #263241;
+    }
+
+    textarea,
+    input {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid #b8c0cc;
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--ink);
+      font: 500 1rem / 1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      padding: 10px 12px;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    input {
+      min-height: 44px;
+    }
+
+    textarea:focus-visible,
+    input:focus-visible,
+    button:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      min-height: 40px;
+      border: 1px solid #b8c0cc;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #263241;
+      font: 700 0.95rem / 1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      cursor: pointer;
+      padding: 0 16px;
+    }
+
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+
+    .results {
+      display: grid;
+      gap: 14px;
+    }
+
+    .source-line {
+      color: var(--ink);
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+
+    .pill {
+      display: inline-block;
+      border: 1px solid #c7d4ea;
+      border-radius: 999px;
+      background: #f7f9fc;
+      color: #35527c;
+      font-size: 0.84rem;
+      font-weight: 700;
+      padding: 4px 10px;
+    }
+
+    .pal-list {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--ink);
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+    }
+
+    .pal-list li + li {
+      margin-top: 6px;
+    }
+
+    .empty {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    @media (max-width: 720px) {
+      .control-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .intro,
+      .controls,
+      .section {
+        padding: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Palindromes</h1>
+      <p>Interactive sentence-based palindrome finder</p>
+      <p class="byline">By Rupendra Bandyopadhyay</p>
+    </header>
+
+    <section class="intro" aria-label="Explanation">
+      <h2>How This Page Works</h2>
+      <p>Enter a sentence and a minimum palindrome length. The page normalizes the sentence: it removes non-alphanumeric characters, lowercases the remaining text, finds all palindromes of at least the requested length, then maps each match back to the original sentence so you can see the original text span.</p>
+    </section>
+
+    <section class="controls" aria-label="Inputs">
+      <div class="control-grid">
+        <label for="sentenceInput">Sentence
+          <textarea id="sentenceInput">Madam, in Eden, I'm Adam.</textarea>
+        </label>
+        <label for="minLenInput">Minimum length
+          <input id="minLenInput" type="number" min="1" max="100" step="1" value="3">
+        </label>
+      </div>
+      <div class="actions">
+        <button type="button" id="resetButton">Reset Defaults</button>
+        <button type="button" class="primary" id="analyzeButton">Find Palindromes</button>
+      </div>
+    </section>
+
+    <section class="results" id="results" aria-live="polite"></section>
+  </main>
+
+  <script>
+    const defaultSentence = "Madam, in Eden, I'm Adam.";
+    const defaultMinLen = 3;
+
+    const sentenceInput = document.getElementById("sentenceInput");
+    const minLenInput = document.getElementById("minLenInput");
+    const analyzeButton = document.getElementById("analyzeButton");
+    const resetButton = document.getElementById("resetButton");
+    const results = document.getElementById("results");
+
+    function keepAlnum(value) {
+      if (value == null) {
+        return null;
+      }
+
+      return value.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+    }
+
+    function palindromesAtLeast(seq, minLen) {
+      const found = [];
+
+      function expand(left, right) {
+        while (left >= 0 && right < seq.length && seq[left] === seq[right]) {
+          const length = right - left + 1;
+          if (length >= minLen) {
+            found.push(seq.slice(left, right + 1));
+          }
+          left -= 1;
+          right += 1;
+        }
+      }
+
+      for (let center = 0; center < seq.length; center += 1) {
+        expand(center, center);
+        expand(center, center + 1);
+      }
+
+      return found;
+    }
+
+    function collapseWithPositions(text) {
+      const chars = [];
+      const positions = [];
+
+      for (let i = 0; i < text.length; i += 1) {
+        const ch = text[i];
+        if (/[a-zA-Z0-9]/.test(ch)) {
+          chars.push(ch.toLowerCase());
+          positions.push(i);
+        }
+      }
+
+      return [chars.join(""), positions];
+    }
+
+    function findOriginalSpan(text, palindrome) {
+      const [collapsed, positions] = collapseWithPositions(text);
+      const target = [...palindrome].filter((ch) => /[a-zA-Z0-9]/.test(ch)).join("").toLowerCase();
+      const start = collapsed.indexOf(target);
+
+      if (start === -1) {
+        return null;
+      }
+
+      const end = start + target.length - 1;
+      const originalStart = positions[start];
+      const originalEnd = positions[end];
+      return text.slice(originalStart, originalEnd + 1);
+    }
+
+    function renderSection(title, bodyNodes = []) {
+      const section = document.createElement("section");
+      section.className = "section";
+
+      const heading = document.createElement("h2");
+      heading.textContent = title;
+      section.appendChild(heading);
+
+      bodyNodes.forEach((node) => {
+        section.appendChild(node);
+      });
+
+      return section;
+    }
+
+    function renderParagraph(text, className = "") {
+      const p = document.createElement("p");
+      if (className) {
+        p.className = className;
+      }
+      p.textContent = text;
+      return p;
+    }
+
+    function render() {
+      const sentence = sentenceInput.value;
+      const minLen = Number(minLenInput.value);
+      results.replaceChildren();
+
+      if (!Number.isInteger(minLen) || minLen < 1 || minLen > 100) {
+        results.appendChild(
+          renderSection("Invalid Input", [
+            renderParagraph("Minimum length must be an integer between 1 and 100.")
+          ])
+        );
+        return;
+      }
+
+      const normalized = keepAlnum(sentence) || "";
+      results.appendChild(
+        renderSection("Normalized Input", [
+          renderParagraph(`Original sentence: ${sentence}`, "source-line"),
+          renderParagraph(`Normalized text: ${normalized || "(empty)"}`),
+          (() => {
+            const tag = document.createElement("span");
+            tag.className = "pill";
+            tag.textContent = `Minimum length: ${minLen}`;
+            return tag;
+          })()
+        ])
+      );
+
+      const palindromes = palindromesAtLeast(normalized, minLen);
+      if (palindromes.length === 0) {
+        results.appendChild(
+          renderSection("Detected Palindromes", [
+            renderParagraph("No palindromes found.", "empty")
+          ])
+        );
+        return;
+      }
+
+      const detailedPalindromes = palindromes
+        .map((palindrome) => {
+          const original = findOriginalSpan(sentence, palindrome) || "";
+          return {
+            palindrome,
+            original,
+            originalLength: original.length
+          };
+        })
+        .sort((a, b) => b.originalLength - a.originalLength);
+
+      const list = document.createElement("ol");
+      list.className = "pal-list";
+      detailedPalindromes.forEach(({ palindrome, original, originalLength }) => {
+        const item = document.createElement("li");
+        item.textContent = `${original} [length: ${originalLength}, normalized: ${palindrome}]`;
+        list.appendChild(item);
+      });
+
+      results.appendChild(
+        renderSection("Detected Palindromes", [list])
+      );
+    }
+
+    resetButton.addEventListener("click", () => {
+      sentenceInput.value = defaultSentence;
+      minLenInput.value = defaultMinLen;
+      render();
+    });
+
+    analyzeButton.addEventListener("click", render);
+    sentenceInput.addEventListener("keydown", (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+        render();
+      }
+    });
+    minLenInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        render();
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>

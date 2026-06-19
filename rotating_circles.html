@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Circle Rolling Simulation</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      background: #fafafa;
+    }
+    button {
+      margin: 8px;
+      padding: 8px 14px;
+      font-size: 15px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Small Circle Rolling Around / Inside Large Circle</h2>
+
+<canvas id="canvas" width="700" height="500"></canvas>
+
+<br />
+
+<button onclick="mode='outside'; reset()">Outside Rolling</button>
+<button onclick="mode='inside'; reset()">Inside Rolling</button>
+<button onclick="startAnimation()">Start / Restart</button>
+<button onclick="togglePause()">Pause / Resume</button>
+
+<p id="info"></p>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const info = document.getElementById("info");
+
+const cx = canvas.width / 2;
+const cy = canvas.height / 2;
+
+const r = 60;        // small circle radius
+const R = 2 * r;     // large circle radius
+
+let theta = 0;
+let mode = "outside";
+let running = false;
+const startAngle = -Math.PI / 2;
+
+function reset() {
+  theta = 0;
+  running = false;
+}
+
+function startAnimation() {
+  theta = 0;
+  running = true;
+}
+
+function togglePause() {
+  if (theta >= Math.PI * 2) {
+    return;
+  }
+
+  running = !running;
+}
+
+function drawCircle(x, y, radius, color) {
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+}
+
+function drawLine(x1, y1, x2, y2, color) {
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 4;
+  ctx.stroke();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Large fixed circle
+  drawCircle(cx, cy, R, "black");
+
+  let pathRadius, rotations, spinAngle;
+
+  if (mode === "outside") {
+    pathRadius = R + r;
+    rotations = (R + r) / r;
+    spinAngle = rotations * theta;
+  } else {
+    pathRadius = R - r;
+    rotations = (R - r) / r;
+    spinAngle = -rotations * theta;
+  }
+
+  const orbitAngle = theta + startAngle;
+  const x = cx + pathRadius * Math.cos(orbitAngle);
+  const y = cy + pathRadius * Math.sin(orbitAngle);
+
+  // Path followed by small circle's center
+  ctx.beginPath();
+  ctx.arc(cx, cy, pathRadius, 0, Math.PI * 2);
+  ctx.strokeStyle = "#bbb";
+  ctx.setLineDash([6, 6]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Small rolling circle
+  drawCircle(x, y, r, "blue");
+
+  // Radius marker showing rotation of small circle
+  const markerX = x + r * Math.cos(spinAngle);
+  const markerY = y + r * Math.sin(spinAngle);
+  drawLine(x, y, markerX, markerY, "red");
+
+  // Center point
+  ctx.beginPath();
+  ctx.arc(x, y, 4, 0, Math.PI * 2);
+  ctx.fillStyle = "blue";
+  ctx.fill();
+
+  const completedRotations = Math.abs(spinAngle / (2 * Math.PI));
+
+  info.innerHTML =
+    `<b>Mode:</b> ${mode} rolling<br>` +
+    `<b>Expected rotations after one full trip:</b> ${rotations}<br>` +
+    `<b>Current rotations:</b> ${completedRotations.toFixed(2)}`;
+
+  if (running) {
+    theta += 0.01;
+
+    if (theta >= Math.PI * 2) {
+      theta = Math.PI * 2;
+      running = false;
+    }
+  }
+
+  requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+
+</body>
+</html>

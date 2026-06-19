@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tree Grid with Lines</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      background: white;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    svg {
+      border: 1px solid #ccc;
+    }
+
+    text.tree {
+      font-size: 28px;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      user-select: none; /* Prevent text selection while dragging */
+      transition: filter 0.2s ease;
+    }
+
+    text.tree:hover {
+      filter: drop-shadow(0 0 8px rgba(0, 150, 0, 0.8)) brightness(1.2);
+    }
+
+    text.tree.selected {
+      filter: drop-shadow(0 0 12px rgba(255, 0, 0, 1)) brightness(1.3) saturate(0.3) sepia(1) hue-rotate(0deg);
+    }
+
+    .context-menu {
+      position: absolute;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      z-index: 1000;
+      padding: 4px 0;
+      min-width: 100px;
+      font-family: sans-serif;
+      font-size: 14px;
+      display: none;
+    }
+
+    .context-menu .menu-item {
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: background-color 0.1s ease;
+    }
+
+    .context-menu .menu-item:hover {
+      background-color: #f0f0f0;
+    }
+
+    .context-menu .menu-item.active {
+      background-color: #e6f3ff;
+      font-weight: bold;
+    }
+
+    .controls {
+      margin-top: 15px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-family: sans-serif;
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .controls .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .controls .button-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .controls button {
+      padding: 4px 12px;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background-color 0.2s ease;
+    }
+
+    .controls button#showSolution {
+      background: #e8f4fd;
+      border-color: #4a90e2;
+      color: #2c5aa0;
+    }
+
+    .controls button#showSolution:hover {
+      background: #d1e7fc;
+    }
+
+    .controls button#exportSolution {
+      display: none;
+    }
+
+    .controls button#showSolution {
+      display: none;
+    }
+
+    .controls button#showSolution.visible {
+      display: inline-block;
+    }
+
+    .controls button:hover {
+      background: #e0e0e0;
+    }
+
+    .controls button:active {
+      background: #d0d0d0;
+    }
+
+    .controls label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .controls input[type="checkbox"] {
+      margin: 0;
+    }
+
+    line.tree-line {
+      stroke: black;
+      stroke-width: 2;
+      cursor: pointer;
+      transition: stroke-width 0.2s ease;
+    }
+
+    line.tree-line:hover {
+      stroke-width: 3;
+    }
+
+    line.tree-line.selected {
+      stroke: red;
+      stroke-width: 4;
+    }
+
+    line.preview-line {
+      stroke: #999;
+      stroke-width: 2;
+      stroke-dasharray: 5,5;
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .help-section {
+      margin-top: 10px;
+      max-width: 600px;
+      text-align: left;
+    }
+
+    .help-toggle {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      color: #495057;
+      margin: 0 auto 10px auto;
+      display: block;
+      padding: 4px 12px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background-color 0.2s ease;
+    }
+
+    .help-toggle:hover {
+      background: #e9ecef;
+    }
+
+    .help-content {
+      display: none;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 20px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .help-content.visible {
+      display: block;
+    }
+
+    .help-content h3 {
+      margin: 0 0 10px 0;
+      color: #2c5aa0;
+      font-size: 16px;
+    }
+
+    .help-content ul {
+      margin: 8px 0;
+      padding-left: 20px;
+    }
+
+    .help-content li {
+      margin: 4px 0;
+    }
+
+    .help-content .feature-group {
+      margin-bottom: 15px;
+    }
+
+    .help-content .shortcut {
+      background: #e9ecef;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <svg id="chart"></svg>
+  <div class="controls">
+    <div class="checkbox-row">
+      <label>
+        <input type="checkbox" id="hideNonHighlighted"> Hide non-highlighted trees
+      </label>
+    </div>
+    <div class="button-row">
+      <button id="saveState">Save State</button>
+      <button id="loadState">Load State</button>
+      <button id="clearState">Clear All</button>
+    </div>
+    <div class="button-row">
+      <button id="exportSolution">Export Solution</button>
+      <button id="showSolution">Show Solution</button>
+    </div>
+  </div>
+  <div class="help-section">
+    <button id="helpToggle" class="help-toggle">📖 Show Help</button>
+    <div id="helpContent" class="help-content">
+      <div class="feature-group">
+        <h3>🎯 Drawing Lines</h3>
+        <ul>
+          <li><strong>Click and drag</strong> from one tree to another to draw a line</li>
+          <li>A dashed preview line follows your mouse while dragging</li>
+          <li>Release on a different tree to create the line</li>
+        </ul>
+      </div>
+      
+      <div class="feature-group">
+        <h3>🌲 Highlighting Trees</h3>
+        <ul>
+          <li><strong>Right-click</strong> on any tree to open context menu</li>
+          <li>Choose <strong>"Highlight"</strong> to make tree glow red</li>
+          <li>Choose <strong>"Normal"</strong> to remove highlighting</li>
+        </ul>
+      </div>
+      
+      <div class="feature-group">
+        <h3>📐 Managing Lines</h3>
+        <ul>
+          <li><strong>Click on a line</strong> to select it (turns red and thick)</li>
+          <li>Press <span class="shortcut">Delete</span> or <span class="shortcut">Backspace</span> to remove selected line</li>
+          <li>Click empty space to deselect</li>
+        </ul>
+      </div>
+      
+      <div class="feature-group">
+        <h3>👁️ Visibility Control</h3>
+        <ul>
+          <li>Check <strong>"Hide non-highlighted trees"</strong> to show only red trees</li>
+          <li>Useful for focusing on specific parts of your solution</li>
+          <li>Uncheck to show all trees again</li>
+        </ul>
+      </div>
+      
+      <div class="feature-group">
+        <h3>💾 Save & Restore</h3>
+        <ul>
+          <li><strong>Save State:</strong> Stores current lines and highlights</li>
+          <li><strong>Load State:</strong> Restores your last saved configuration</li>
+          <li><strong>Clear All:</strong> Removes all lines and highlights</li>
+          <li>States persist even after page refresh!</li>
+        </ul>
+      </div>
+      
+      <div class="feature-group">
+        <h3>💡 Tips</h3>
+        <ul>
+          <li>Trees glow green when you hover over them</li>
+          <li>Lines get thicker when you hover over them</li>
+          <li>You can select multiple trees by highlighting them individually</li>
+          <li>Use Save State to experiment without losing your progress</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div id="contextMenu" class="context-menu">
+    <div class="menu-item" data-action="highlight">Highlight</div>
+    <div class="menu-item" data-action="normal">Normal</div>
+  </div>
+
+  <script>
+    const n = 7;
+    const spacing = 50;
+    const margin = 40;
+
+    const width = margin * 2 + spacing * (n - 1);
+    const height = margin * 2 + spacing * (n - 1);
+
+    // Check for show solution query parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('ss') === '1') {
+      document.getElementById('showSolution').classList.add('visible');
+    }
+
+    const svg = d3.select("#chart")
+      .attr("width", width)
+      .attr("height", height);
+
+    const data = [];
+    for (let row = 0; row < n; row++) {
+      for (let col = 0; col < n; col++) {
+        data.push({
+          row,
+          col,
+          x: margin + col * spacing,
+          y: margin + row * spacing
+        });
+      }
+    }
+
+    // State for drag operations
+    let isDragging = false;
+    let dragStart = null;
+    let previewLine = null;
+    let selectedLine = null;
+    let selectedTrees = new Set();
+    let mouseDownTime = 0;
+    let dragThreshold = 5; // pixels
+    let mouseDownPos = null;
+
+    // Add keyboard event listener for deletion
+    document.addEventListener('keydown', function(event) {
+      if ((event.key === 'Delete' || event.key === 'Backspace') && selectedLine) {
+        selectedLine.remove();
+        selectedLine = null;
+      }
+    });
+
+    // Hide context menu when clicking anywhere
+    document.addEventListener('click', function() {
+      hideContextMenu();
+    });
+
+    // Clear line selection when clicking on empty SVG space  
+    svg.on("click", function(event) {
+      if (event.target === this) {
+        clearLineSelection();
+      }
+    });
+
+    // Context menu elements
+    const contextMenu = d3.select("#contextMenu");
+    let contextMenuTarget = null;
+    
+    // Hide checkbox and buttons
+    const hideCheckbox = d3.select("#hideNonHighlighted");
+    hideCheckbox.on("change", updateTreeVisibility);
+    
+    const saveButton = d3.select("#saveState");
+    const loadButton = d3.select("#loadState");
+    const clearButton = d3.select("#clearState");
+    const exportSolutionButton = d3.select("#exportSolution");
+    const showSolutionButton = d3.select("#showSolution");
+    const helpToggle = d3.select("#helpToggle");
+    const helpContent = d3.select("#helpContent");
+    
+    saveButton.on("click", saveCurrentState);
+    loadButton.on("click", loadSavedState);
+    clearButton.on("click", clearAllState);
+    exportSolutionButton.on("click", exportCurrentStateAsSolution);
+    showSolutionButton.on("click", loadSolutionState);
+    helpToggle.on("click", toggleHelp);
+
+    // Draw trees with interaction capabilities
+    const trees = svg.selectAll("text.tree")
+      .data(data)
+      .enter()
+      .append("text")
+      .attr("class", "tree")
+      .attr("x", d => d.x)
+      .attr("y", d => d.y)
+      .text("🌲")
+      .style("cursor", "crosshair")
+      .on("mousedown", startDrag)
+      .on("mouseenter", onTreeHover)
+      .on("mouseup", endDrag)
+      .on("contextmenu", showContextMenu);
+
+    // Add mouse move listener to SVG for drag preview
+    svg.on("mousemove", onMouseMove);
+
+    function startDrag(event, d) {
+      event.preventDefault();
+      mouseDownTime = Date.now();
+      mouseDownPos = d3.pointer(event);
+      dragStart = d;
+      
+      // Don't set isDragging immediately - wait to see if user actually drags
+      trees.style("cursor", "grabbing");
+    }
+
+    function onMouseMove(event) {
+      if (!dragStart) return;
+      
+      const [mouseX, mouseY] = d3.pointer(event);
+      const dx = mouseX - mouseDownPos[0];
+      const dy = mouseY - mouseDownPos[1];
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Start dragging if moved beyond threshold
+      if (!isDragging && distance > dragThreshold) {
+        isDragging = true;
+        
+        // Create preview line
+        previewLine = svg.append("line")
+          .attr("class", "preview-line")
+          .attr("x1", dragStart.x)
+          .attr("y1", dragStart.y)
+          .attr("x2", dragStart.x)
+          .attr("y2", dragStart.y)
+          .style("stroke", "#999")
+          .style("stroke-width", 2)
+          .style("stroke-dasharray", "5,5")
+          .style("opacity", 0.7);
+      }
+      
+      if (isDragging && previewLine) {
+        previewLine
+          .attr("x2", mouseX)
+          .attr("y2", mouseY);
+      }
+    }
+
+    function onTreeHover(event, d) {
+      if (!isDragging) return;
+      
+      // Update preview line to snap to tree when hovering
+      if (previewLine) {
+        previewLine
+          .attr("x2", d.x)
+          .attr("y2", d.y);
+      }
+    }
+
+    function endDrag(event, d) {
+      if (!dragStart) return;
+      
+      if (isDragging) {
+        // This was a drag operation - draw line if dropped on different tree
+        if (dragStart && d !== dragStart) {
+          drawLineBetweenTrees(dragStart.row, dragStart.col, d.row, d.col);
+        }
+      }
+      
+      // Clean up
+      if (previewLine) {
+        previewLine.remove();
+        previewLine = null;
+      }
+      
+      isDragging = false;
+      dragStart = null;
+      mouseDownPos = null;
+      trees.style("cursor", "crosshair");
+    }
+
+    function clearLineSelection() {
+      if (selectedLine) {
+        selectedLine.classed("selected", false);
+        selectedLine = null;
+      }
+    }
+
+    function showContextMenu(event, d) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      contextMenuTarget = {
+        element: d3.select(event.target),
+        data: d
+      };
+      
+      // Update menu items to show current state
+      const isSelected = contextMenuTarget.element.classed("selected");
+      contextMenu.selectAll(".menu-item")
+        .classed("active", function() {
+          const action = d3.select(this).attr("data-action");
+          return (action === "highlight" && isSelected) || (action === "normal" && !isSelected);
+        });
+      
+      // Position and show menu
+      contextMenu
+        .style("left", (event.pageX + 2) + "px")
+        .style("top", (event.pageY + 2) + "px")
+        .style("display", "block");
+    }
+
+    function hideContextMenu() {
+      contextMenu.style("display", "none");
+      contextMenuTarget = null;
+    }
+
+    function updateTreeVisibility() {
+      const hideNonHighlighted = hideCheckbox.property("checked");
+      
+      trees.style("opacity", function(d) {
+        const isHighlighted = d3.select(this).classed("selected");
+        if (hideNonHighlighted) {
+          return isHighlighted ? 1 : 0;
+        }
+        return 1;
+      })
+      .style("pointer-events", function(d) {
+        const isHighlighted = d3.select(this).classed("selected");
+        if (hideNonHighlighted) {
+          return isHighlighted ? "auto" : "none";
+        }
+        return "auto";
+      });
+    }
+
+    // SOLUTION STATE - Replace this with your exported solution data
+    const SOLUTION_STATE = {
+        "highlightedTrees": [
+            {
+            "row": 0,
+            "col": 3
+            },
+            {
+            "row": 2,
+            "col": 0
+            },
+            {
+            "row": 2,
+            "col": 2
+            },
+            {
+            "row": 2,
+            "col": 4
+            },
+            {
+            "row": 2,
+            "col": 6
+            },
+            {
+            "row": 3,
+            "col": 1
+            },
+            {
+            "row": 3,
+            "col": 4
+            },
+            {
+            "row": 4,
+            "col": 3
+            },
+            {
+            "row": 6,
+            "col": 0
+            },
+            {
+            "row": 6,
+            "col": 6
+            }
+        ],
+        "lines": [
+            {
+            "x1": 40,
+            "y1": 340,
+            "x2": 190,
+            "y2": 40
+            },
+            {
+            "x1": 190,
+            "y1": 40,
+            "x2": 340,
+            "y2": 340
+            },
+            {
+            "x1": 340,
+            "y1": 340,
+            "x2": 40,
+            "y2": 140
+            },
+            {
+            "x1": 40,
+            "y1": 140,
+            "x2": 340,
+            "y2": 140
+            },
+            {
+            "x1": 340,
+            "y1": 140,
+            "x2": 40,
+            "y2": 340
+            }
+        ],
+        "timestamp": "solution"
+    };
+
+
+    function saveCurrentState() {
+      const state = {
+        highlightedTrees: [],
+        lines: [],
+        timestamp: new Date().toISOString()
+      };
+      
+      // Save highlighted trees
+      trees.each(function(d) {
+        if (d3.select(this).classed("selected")) {
+          state.highlightedTrees.push({ row: d.row, col: d.col });
+        }
+      });
+      
+      // Save lines
+      svg.selectAll("line.tree-line").each(function() {
+        const line = d3.select(this);
+        state.lines.push({
+          x1: +line.attr("x1"),
+          y1: +line.attr("y1"),
+          x2: +line.attr("x2"),
+          y2: +line.attr("y2")
+        });
+      });
+      
+      // Save to localStorage
+      localStorage.setItem('treeGridState', JSON.stringify(state));
+      
+      // Visual feedback
+      saveButton.text("Saved!");
+      setTimeout(() => saveButton.text("Save State"), 1000);
+    }
+
+    function loadSavedState() {
+      const savedState = localStorage.getItem('treeGridState');
+      if (!savedState) {
+        loadButton.text("No saved state");
+        setTimeout(() => loadButton.text("Load State"), 1000);
+        return;
+      }
+      
+      try {
+        const state = JSON.parse(savedState);
+        
+        // Clear current state first
+        clearAllState();
+        
+        // Restore highlighted trees
+        state.highlightedTrees.forEach(treePos => {
+          const treeElement = trees.filter(d => d.row === treePos.row && d.col === treePos.col);
+          if (!treeElement.empty()) {
+            treeElement.classed("selected", true);
+            selectedTrees.add(treeElement);
+          }
+        });
+        
+        // Restore lines
+        state.lines.forEach(lineData => {
+          svg.append("line")
+            .attr("class", "tree-line")
+            .attr("x1", lineData.x1)
+            .attr("y1", lineData.y1)
+            .attr("x2", lineData.x2)
+            .attr("y2", lineData.y2)
+            .on("click", function(event) {
+              event.stopPropagation();
+              selectLine(d3.select(this));
+            });
+        });
+        
+        // Update visibility based on current checkbox state
+        updateTreeVisibility();
+        
+        // Visual feedback
+        loadButton.text("Loaded!");
+        setTimeout(() => loadButton.text("Load State"), 1000);
+        
+      } catch (error) {
+        console.error('Error loading state:', error);
+        loadButton.text("Load failed");
+        setTimeout(() => loadButton.text("Load State"), 1000);
+      }
+    }
+
+    function clearAllState() {
+      // Clear highlighted trees
+      selectedTrees.forEach(treeElement => {
+        treeElement.classed("selected", false);
+      });
+      selectedTrees.clear();
+      
+      // Clear all lines
+      svg.selectAll("line.tree-line").remove();
+      
+      // Clear selected line
+      selectedLine = null;
+      
+      // Update visibility
+      updateTreeVisibility();
+      
+      // Visual feedback
+      clearButton.text("Cleared!");
+      setTimeout(() => clearButton.text("Clear All"), 1000);
+    }
+
+    function exportCurrentStateAsSolution() {
+      const state = {
+        highlightedTrees: [],
+        lines: [],
+        timestamp: "solution"
+      };
+      
+      // Capture highlighted trees
+      trees.each(function(d) {
+        if (d3.select(this).classed("selected")) {
+          state.highlightedTrees.push({ row: d.row, col: d.col });
+        }
+      });
+      
+      // Capture lines
+      svg.selectAll("line.tree-line").each(function() {
+        const line = d3.select(this);
+        state.lines.push({
+          x1: +line.attr("x1"),
+          y1: +line.attr("y1"),
+          x2: +line.attr("x2"),
+          y2: +line.attr("y2")
+        });
+      });
+      
+      // Export to console and try to copy to clipboard
+      const stateJSON = JSON.stringify(state, null, 2);
+      console.log("\n=== SOLUTION STATE DATA ===");
+      console.log("Copy this data and replace the SOLUTION_STATE constant in your code:");
+      console.log(stateJSON);
+      console.log("============================\n");
+      
+      // Try to copy to clipboard (modern browsers)
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(stateJSON).then(() => {
+          exportSolutionButton.text("Copied to clipboard!");
+          setTimeout(() => exportSolutionButton.text("Export Solution"), 2000);
+        }).catch(() => {
+          exportSolutionButton.text("Check console for data");
+          setTimeout(() => exportSolutionButton.text("Export Solution"), 2000);
+        });
+      } else {
+        exportSolutionButton.text("Check console for data");
+        setTimeout(() => exportSolutionButton.text("Export Solution"), 2000);
+      }
+    }
+
+    function loadSolutionState() {
+      if (!SOLUTION_STATE.highlightedTrees.length && !SOLUTION_STATE.lines.length) {
+        showSolutionButton.text("No solution defined");
+        setTimeout(() => showSolutionButton.text("Show Solution"), 1500);
+        return;
+      }
+      
+      // Clear current state first
+      clearAllState();
+      
+      // Load solution highlights
+      SOLUTION_STATE.highlightedTrees.forEach(treePos => {
+        const treeElement = trees.filter(d => d.row === treePos.row && d.col === treePos.col);
+        if (!treeElement.empty()) {
+          treeElement.classed("selected", true);
+          selectedTrees.add(treeElement);
+        }
+      });
+      
+      // Load solution lines
+      SOLUTION_STATE.lines.forEach(lineData => {
+        svg.append("line")
+          .attr("class", "tree-line")
+          .attr("x1", lineData.x1)
+          .attr("y1", lineData.y1)
+          .attr("x2", lineData.x2)
+          .attr("y2", lineData.y2)
+          .on("click", function(event) {
+            event.stopPropagation();
+            selectLine(d3.select(this));
+          });
+      });
+      
+      // Update visibility
+      updateTreeVisibility();
+      
+      // Visual feedback
+      showSolutionButton.text("Solution loaded!");
+      setTimeout(() => showSolutionButton.text("Show Solution"), 1500);
+    }
+
+    function toggleHelp() {
+      const isVisible = helpContent.classed("visible");
+      helpContent.classed("visible", !isVisible);
+      helpToggle.text(isVisible ? "📖 Show Help" : "📖 Hide Help");
+    }
+
+    // Handle context menu clicks
+    contextMenu.selectAll(".menu-item")
+      .on("click", function(event) {
+        event.stopPropagation();
+        const action = d3.select(this).attr("data-action");
+        
+        if (contextMenuTarget) {
+          if (action === "highlight") {
+            contextMenuTarget.element.classed("selected", true);
+            selectedTrees.add(contextMenuTarget.element);
+          } else if (action === "normal") {
+            contextMenuTarget.element.classed("selected", false);
+            selectedTrees.delete(contextMenuTarget.element);
+          }
+          
+          // Update visibility after changing highlight status
+          updateTreeVisibility();
+        }
+        
+        hideContextMenu();
+      });
+
+    function selectLine(line) {
+      clearLineSelection();
+      selectedLine = line;
+      line.classed("selected", true);
+    }
+
+    function treeToPoint(row, col) {
+      if (
+        row < 0 || row >= n ||
+        col < 0 || col >= n
+      ) {
+        throw new Error(`Invalid tree position: row=${row}, col=${col}`);
+      }
+
+      return {
+        x: margin + col * spacing,
+        y: margin + row * spacing
+      };
+    }
+
+    function drawLineBetweenTrees(row1, col1, row2, col2) {
+      const p1 = treeToPoint(row1, col1);
+      const p2 = treeToPoint(row2, col2);
+
+      const line = svg.append("line")
+        .attr("class", "tree-line")
+        .attr("x1", p1.x)
+        .attr("y1", p1.y)
+        .attr("x2", p2.x)
+        .attr("y2", p2.y)
+        .on("click", function(event) {
+          event.stopPropagation();
+          selectLine(d3.select(this));
+        });
+        
+      return line;
+    }
+  </script>
+</body>
+</html>

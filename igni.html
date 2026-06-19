@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>In Girum Imus</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg-top: #f4ead7;
+      --bg-bottom: #d7ccb9;
+      --ring: #8d8d8d;
+      --ring-shadow: rgba(39, 33, 28, 0.18);
+      --letter: #1f1b17;
+      --ember: #5f2310;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at top, rgba(255, 248, 231, 0.9), transparent 34%),
+        linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+      color: var(--letter);
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    main {
+      width: min(92vw, 840px);
+      display: grid;
+      place-items: center;
+      gap: 22px;
+      padding: 24px 0;
+    }
+
+    .figure {
+      position: relative;
+      width: min(78vw, 620px);
+      aspect-ratio: 1;
+      border: 26px solid var(--ring);
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 42%, #fff8df 0 18%, #efe5ce 28%, #d8cdbb 58%, #b7aa95 100%);
+      box-shadow:
+        0 30px 60px var(--ring-shadow),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.35),
+        inset 0 0 44px rgba(70, 45, 23, 0.12);
+      overflow: visible;
+    }
+
+    .ring-text {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .ring-letter {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform-origin: center;
+      font-size: clamp(0.9rem, 1.35vw, 1.28rem);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: rgba(31, 27, 23, 0.52);
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.16);
+      transition:
+        color 0.35s ease,
+        text-shadow 0.35s ease,
+        filter 0.35s ease,
+        transform 0.95s cubic-bezier(0.25, 0.8, 0.2, 1),
+        opacity 0.95s ease;
+    }
+
+    .ring-letter.active {
+      color: #d13a16;
+      text-shadow:
+        0 0 8px rgba(255, 196, 87, 0.85),
+        0 0 18px rgba(245, 108, 30, 0.72),
+        0 0 34px rgba(177, 30, 18, 0.48),
+        0 1px 0 rgba(255, 247, 211, 0.35);
+      filter: saturate(1.2);
+    }
+
+    .ring-letter.converging {
+      color: #ffcf66;
+      text-shadow:
+        0 0 10px rgba(255, 229, 145, 0.95),
+        0 0 22px rgba(255, 132, 28, 0.82),
+        0 0 40px rgba(182, 31, 12, 0.52);
+      opacity: 0;
+      filter: saturate(1.35);
+    }
+
+    .fire {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 28%;
+      aspect-ratio: 0.9;
+      transform: translate(-50%, -42%);
+      filter: drop-shadow(0 0 22px rgba(255, 112, 32, 0.32));
+    }
+
+    .flame {
+      --shift: -50%;
+      --twist: 0deg;
+      --stretch: 1;
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      border-radius: 58% 58% 42% 42% / 70% 70% 30% 30%;
+      transform-origin: center bottom;
+      animation: flicker 2.2s ease-in-out infinite;
+    }
+
+    .flame.outer {
+      width: 100%;
+      height: 100%;
+      --shift: -50%;
+      --twist: 0deg;
+      background: linear-gradient(180deg, #ffe9a8 0%, #ffbf4d 22%, #ff7a18 62%, #b61d06 100%);
+      clip-path: polygon(49% 0%, 64% 15%, 71% 32%, 84% 48%, 87% 69%, 76% 87%, 58% 100%, 41% 100%, 24% 88%, 13% 69%, 17% 48%, 31% 29%);
+    }
+
+    .flame.mid {
+      width: 64%;
+      height: 74%;
+      --shift: -52%;
+      --twist: -6deg;
+      background: linear-gradient(180deg, #fff7c7 0%, #ffd463 34%, #ff8a1a 76%, rgba(255, 138, 26, 0.2) 100%);
+      clip-path: polygon(47% 0%, 62% 20%, 69% 38%, 77% 56%, 69% 80%, 54% 100%, 36% 100%, 22% 81%, 27% 57%, 35% 34%);
+      animation-duration: 1.7s;
+      animation-delay: -0.5s;
+    }
+
+    .flame.inner {
+      width: 34%;
+      height: 44%;
+      --shift: -48%;
+      --twist: 7deg;
+      background: linear-gradient(180deg, #fffdf3 0%, #fff1a8 50%, #ffc43b 100%);
+      clip-path: polygon(50% 0%, 67% 27%, 76% 54%, 62% 82%, 47% 100%, 29% 81%, 26% 52%, 36% 28%);
+      animation-duration: 1.25s;
+      animation-delay: -0.2s;
+    }
+
+    .embers {
+      position: absolute;
+      left: 50%;
+      bottom: -7%;
+      width: 44%;
+      height: 12%;
+      transform: translateX(-50%);
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at 20% 50%, #ffb14d 0 16%, transparent 18%),
+        radial-gradient(circle at 44% 35%, #ff8b21 0 14%, transparent 16%),
+        radial-gradient(circle at 66% 58%, #ffcc62 0 15%, transparent 17%),
+        radial-gradient(circle at 84% 40%, #ff7016 0 16%, transparent 18%),
+        linear-gradient(180deg, #5a2412, var(--ember));
+      box-shadow: 0 0 20px rgba(255, 125, 32, 0.25);
+    }
+
+    .caption {
+      margin: 0;
+      text-align: center;
+      font-size: clamp(0.95rem, 1.8vw, 1.1rem);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #4f4538;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .button {
+      min-height: 42px;
+      border: 1px solid #7d6f62;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #fff8e5, #eadabe);
+      color: #3e342b;
+      font: 700 0.95rem / 1 Georgia, "Times New Roman", serif;
+      letter-spacing: 0.04em;
+      padding: 0 18px;
+      cursor: pointer;
+    }
+
+    .button:hover,
+    .button:focus-visible {
+      outline: 3px solid rgba(209, 58, 22, 0.24);
+      outline-offset: 2px;
+      border-color: #b15d39;
+    }
+
+    .button:disabled {
+      cursor: wait;
+      opacity: 0.7;
+    }
+
+    .status {
+      min-height: 1.2em;
+      margin: 0;
+      color: #5b4c41;
+      font-size: 0.92rem;
+    }
+
+    @keyframes flicker {
+      0%, 100% {
+        transform: translateX(var(--shift)) scaleY(var(--stretch)) rotate(var(--twist));
+      }
+
+      25% {
+        transform: translateX(calc(var(--shift) + 1%)) scaleY(calc(var(--stretch) * 1.06)) rotate(calc(var(--twist) - 3deg));
+      }
+
+      50% {
+        transform: translateX(calc(var(--shift) - 1%)) scaleY(calc(var(--stretch) * 0.95)) rotate(calc(var(--twist) + 3deg));
+      }
+
+      75% {
+        transform: translateX(var(--shift)) scaleY(calc(var(--stretch) * 1.08)) rotate(calc(var(--twist) - 2deg));
+      }
+    }
+
+    @media (max-width: 560px) {
+      .figure {
+        border-width: 18px;
+      }
+
+      .ring-letter {
+        font-size: clamp(0.72rem, 2.5vw, 0.94rem);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="figure" aria-label="Circle with Latin text around the border and fire in the center">
+      <div class="ring-text" id="ringText" aria-hidden="true"></div>
+      <div class="fire" aria-hidden="true">
+        <div class="flame outer"></div>
+        <div class="flame mid"></div>
+        <div class="flame inner"></div>
+        <div class="embers"></div>
+      </div>
+    </div>
+    <p class="caption">In Girum Imus Nocte Et Consumimur Igni</p>
+    <div class="controls">
+      <button class="button" type="button" id="exportVideoButton">Export Video</button>
+      <p class="status" id="exportStatus" aria-live="polite"></p>
+    </div>
+  </main>
+
+  <script>
+    const words = ["IN", "GIRUM", "IMUS", "NOCTE", "ET", "CONSUMIMUR", "IGNI"];
+    const letters = words.join("");
+    const ringText = document.getElementById("ringText");
+    const exportVideoButton = document.getElementById("exportVideoButton");
+    const exportStatus = document.getElementById("exportStatus");
+    const wordLengths = words.map((word) => word.length);
+    const forwardGroups = [];
+    const reverseGroups = [];
+    let cursor = 0;
+    const sequence = [];
+    let sequenceIndex = 0;
+    let animationIntervalId = null;
+    const stepMs = 900;
+    const reversePauseMs = 650;
+    const convergeMs = 1200;
+    const exportEndHoldMs = 400;
+    const exportFps = 30;
+    const exportSize = 1080;
+
+    for (const length of wordLengths) {
+      forwardGroups.push(
+        Array.from({ length }, (_, offset) => cursor + offset)
+      );
+      cursor += length;
+    }
+
+    let reverseIndex = letters.length - 1;
+
+    for (const length of wordLengths) {
+      const group = [];
+
+      for (let offset = 0; offset < length; offset += 1) {
+        group.push(reverseIndex);
+        reverseIndex = (reverseIndex - 1 + letters.length) % letters.length;
+      }
+
+      reverseGroups.push(group);
+    }
+
+    for (const group of forwardGroups) {
+      sequence.push(group);
+    }
+
+    for (const group of reverseGroups) {
+      sequence.push(group);
+    }
+
+    function renderRing() {
+      ringText.textContent = "";
+      sequenceIndex = 0;
+
+      if (animationIntervalId !== null) {
+        window.clearInterval(animationIntervalId);
+      }
+
+      const ringWidth = parseFloat(getComputedStyle(document.querySelector(".figure")).borderTopWidth);
+      const radius = ringText.clientWidth / 2 - ringWidth / 2;
+      const step = 360 / letters.length;
+      let letterIndex = 0;
+
+      for (let wordIndex = 0; wordIndex < words.length; wordIndex += 1) {
+        const word = words[wordIndex];
+
+        for (let charIndex = 0; charIndex < word.length; charIndex += 1) {
+          const angle = letterIndex * step;
+          const letter = document.createElement("span");
+          letter.className = "ring-letter";
+          letter.textContent = word[charIndex];
+          letter.dataset.letterIndex = String(letterIndex);
+          letter.dataset.angle = String(angle);
+          letter.dataset.radius = String(radius);
+          letter.style.transform = buildTransform(angle, radius, false);
+          ringText.appendChild(letter);
+          letterIndex += 1;
+        }
+      }
+
+      highlightLetters(sequence[sequenceIndex]);
+      sequenceIndex = (sequenceIndex + 1) % sequence.length;
+      animationIntervalId = window.setInterval(animateWords, stepMs);
+    }
+
+    function highlightLetters(activeLetterIndexes) {
+      const ringLetters = ringText.querySelectorAll(".ring-letter");
+      const activeSet = new Set(activeLetterIndexes);
+
+      for (const letter of ringLetters) {
+        const isActive = activeSet.has(Number(letter.dataset.letterIndex));
+        const angle = Number(letter.dataset.angle);
+        const radius = Number(letter.dataset.radius);
+        letter.classList.remove("converging");
+        letter.classList.toggle("active", isActive);
+        letter.style.transform = buildTransform(angle, radius, isActive);
+        letter.style.opacity = "1";
+      }
+    }
+
+    function buildTransform(angle, radius, isActive) {
+      const scale = isActive ? 1.16 : 1;
+      return `rotate(${angle}deg) translateY(-${radius}px) rotate(${-angle}deg) scale(${scale})`;
+    }
+
+    function animateWords() {
+      highlightLetters(sequence[sequenceIndex]);
+      sequenceIndex = (sequenceIndex + 1) % sequence.length;
+
+      if (sequenceIndex === 0) {
+        window.clearInterval(animationIntervalId);
+        animationIntervalId = null;
+        window.setTimeout(convergeIntoFire, reversePauseMs);
+      }
+    }
+
+    function convergeIntoFire() {
+      const ringLetters = ringText.querySelectorAll(".ring-letter");
+
+      for (const letter of ringLetters) {
+        const angle = Number(letter.dataset.angle);
+        letter.classList.remove("active");
+        letter.classList.add("converging");
+        letter.style.transform = `rotate(${angle}deg) translateY(-10px) rotate(${-angle}deg) scale(0.18)`;
+      }
+    }
+
+    function getActivePhaseDurationMs() {
+      return (sequence.length - 1) * stepMs + reversePauseMs;
+    }
+
+    function getExportDurationMs() {
+      return getActivePhaseDurationMs() + convergeMs + exportEndHoldMs;
+    }
+
+    function getAnimationState(timeMs) {
+      const activePhaseDurationMs = getActivePhaseDurationMs();
+
+      if (timeMs < activePhaseDurationMs) {
+        return {
+          activeSet: new Set(sequence[Math.min(Math.floor(timeMs / stepMs), sequence.length - 1)]),
+          convergeProgress: 0
+        };
+      }
+
+      return {
+        activeSet: new Set(),
+        convergeProgress: Math.min((timeMs - activePhaseDurationMs) / convergeMs, 1)
+      };
+    }
+
+    function drawBackground(ctx, size) {
+      const gradient = ctx.createLinearGradient(0, 0, 0, size);
+      gradient.addColorStop(0, "#f4ead7");
+      gradient.addColorStop(1, "#d7ccb9");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, size, size);
+
+      const glow = ctx.createRadialGradient(size * 0.5, size * 0.12, 0, size * 0.5, size * 0.12, size * 0.34);
+      glow.addColorStop(0, "rgba(255, 248, 231, 0.92)");
+      glow.addColorStop(1, "rgba(255, 248, 231, 0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, size, size);
+    }
+
+    function drawCircle(ctx, centerX, centerY, outerRadius, borderWidth) {
+      ctx.save();
+      ctx.shadowColor = "rgba(39, 33, 28, 0.18)";
+      ctx.shadowBlur = 46;
+      ctx.shadowOffsetY = 24;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, outerRadius, 0, Math.PI * 2);
+      ctx.fillStyle = "#8d8d8d";
+      ctx.fill();
+      ctx.restore();
+
+      const innerGradient = ctx.createRadialGradient(
+        centerX,
+        centerY - outerRadius * 0.08,
+        outerRadius * 0.12,
+        centerX,
+        centerY,
+        outerRadius - borderWidth
+      );
+      innerGradient.addColorStop(0, "#fff8df");
+      innerGradient.addColorStop(0.28, "#efe5ce");
+      innerGradient.addColorStop(0.62, "#d8cdbb");
+      innerGradient.addColorStop(1, "#b7aa95");
+
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, outerRadius - borderWidth, 0, Math.PI * 2);
+      ctx.fillStyle = innerGradient;
+      ctx.fill();
+    }
+
+    function drawFlameShape(ctx, points, fillStyle) {
+      ctx.beginPath();
+      ctx.moveTo(points[0][0], points[0][1]);
+
+      for (let index = 1; index < points.length; index += 1) {
+        ctx.lineTo(points[index][0], points[index][1]);
+      }
+
+      ctx.closePath();
+      ctx.fillStyle = fillStyle;
+      ctx.fill();
+    }
+
+    function drawFire(ctx, centerX, centerY, baseSize, timeMs) {
+      const time = timeMs / 1000;
+      const baseY = centerY + baseSize * 0.16;
+      const flicker = 1 + Math.sin(time * 7.4) * 0.035;
+      const sway = Math.sin(time * 4.8) * baseSize * 0.03;
+
+      ctx.save();
+      ctx.translate(centerX + sway, baseY);
+      ctx.scale(flicker, 1 + Math.sin(time * 6.1) * 0.05);
+
+      const outerGradient = ctx.createLinearGradient(0, -baseSize, 0, baseSize * 0.15);
+      outerGradient.addColorStop(0, "#ffe9a8");
+      outerGradient.addColorStop(0.24, "#ffbf4d");
+      outerGradient.addColorStop(0.68, "#ff7a18");
+      outerGradient.addColorStop(1, "#b61d06");
+      drawFlameShape(ctx, [
+        [0, -baseSize],
+        [baseSize * 0.22, -baseSize * 0.68],
+        [baseSize * 0.32, -baseSize * 0.34],
+        [baseSize * 0.49, -baseSize * 0.03],
+        [baseSize * 0.42, baseSize * 0.28],
+        [baseSize * 0.14, baseSize * 0.58],
+        [0, baseSize * 0.67],
+        [-baseSize * 0.18, baseSize * 0.56],
+        [-baseSize * 0.4, baseSize * 0.22],
+        [-baseSize * 0.46, -baseSize * 0.05],
+        [-baseSize * 0.28, -baseSize * 0.38],
+        [-baseSize * 0.16, -baseSize * 0.72]
+      ], outerGradient);
+
+      ctx.rotate(-0.08 + Math.sin(time * 5.3) * 0.03);
+      const midGradient = ctx.createLinearGradient(0, -baseSize * 0.72, 0, baseSize * 0.08);
+      midGradient.addColorStop(0, "#fff7c7");
+      midGradient.addColorStop(0.42, "#ffd463");
+      midGradient.addColorStop(1, "#ff8a1a");
+      drawFlameShape(ctx, [
+        [0, -baseSize * 0.72],
+        [baseSize * 0.16, -baseSize * 0.42],
+        [baseSize * 0.25, -baseSize * 0.08],
+        [baseSize * 0.14, baseSize * 0.3],
+        [0, baseSize * 0.45],
+        [-baseSize * 0.15, baseSize * 0.28],
+        [-baseSize * 0.2, -baseSize * 0.05],
+        [-baseSize * 0.1, -baseSize * 0.38]
+      ], midGradient);
+
+      ctx.rotate(0.2 + Math.sin(time * 8.1) * 0.05);
+      const innerGradient = ctx.createLinearGradient(0, -baseSize * 0.46, 0, baseSize * 0.02);
+      innerGradient.addColorStop(0, "#fffdf3");
+      innerGradient.addColorStop(0.52, "#fff1a8");
+      innerGradient.addColorStop(1, "#ffc43b");
+      drawFlameShape(ctx, [
+        [0, -baseSize * 0.42],
+        [baseSize * 0.1, -baseSize * 0.18],
+        [baseSize * 0.16, 0],
+        [baseSize * 0.08, baseSize * 0.18],
+        [0, baseSize * 0.28],
+        [-baseSize * 0.1, baseSize * 0.16],
+        [-baseSize * 0.12, -baseSize * 0.02],
+        [-baseSize * 0.04, -baseSize * 0.24]
+      ], innerGradient);
+      ctx.restore();
+
+      const emberGradient = ctx.createLinearGradient(centerX, centerY + baseSize * 0.66, centerX, centerY + baseSize * 0.88);
+      emberGradient.addColorStop(0, "#5a2412");
+      emberGradient.addColorStop(1, "#5f2310");
+      ctx.fillStyle = emberGradient;
+      ctx.beginPath();
+      ctx.ellipse(centerX, centerY + baseSize * 0.84, baseSize * 0.34, baseSize * 0.08, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      for (const ember of [
+        [-0.22, 0.83, "#ffb14d"],
+        [-0.04, 0.8, "#ff8b21"],
+        [0.14, 0.86, "#ffcc62"],
+        [0.26, 0.81, "#ff7016"]
+      ]) {
+        ctx.fillStyle = ember[2];
+        ctx.beginPath();
+        ctx.arc(centerX + baseSize * ember[0], centerY + baseSize * ember[1], baseSize * 0.032, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawLetters(ctx, centerX, centerY, radius, state) {
+      const stepAngle = (Math.PI * 2) / letters.length;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = "700 28px Georgia";
+
+      for (let index = 0; index < letters.length; index += 1) {
+        const angle = index * stepAngle;
+        const progress = state.convergeProgress;
+        const currentRadius = radius + (10 - radius) * progress;
+        const x = centerX + Math.sin(angle) * currentRadius;
+        const y = centerY - Math.cos(angle) * currentRadius;
+        const isActive = state.activeSet.has(index) && progress === 0;
+        const scale = progress > 0 ? 1.16 + (0.18 - 1.16) * progress : (isActive ? 1.16 : 1);
+        const alpha = progress > 0 ? 1 - progress : 1;
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+        ctx.globalAlpha = alpha;
+
+        if (progress > 0) {
+          ctx.fillStyle = "#ffcf66";
+          ctx.shadowColor = "rgba(255, 132, 28, 0.82)";
+          ctx.shadowBlur = 24;
+        } else if (isActive) {
+          ctx.fillStyle = "#d13a16";
+          ctx.shadowColor = "rgba(245, 108, 30, 0.72)";
+          ctx.shadowBlur = 18;
+        } else {
+          ctx.fillStyle = "rgba(31, 27, 23, 0.52)";
+          ctx.shadowColor = "rgba(255, 255, 255, 0.16)";
+          ctx.shadowBlur = 0;
+        }
+
+        ctx.fillText(letters[index], 0, 0);
+        ctx.restore();
+      }
+    }
+
+    function getRecorderOptions() {
+      const mimeTypes = [
+        "video/webm;codecs=vp9",
+        "video/webm;codecs=vp8",
+        "video/webm"
+      ];
+
+      for (const mimeType of mimeTypes) {
+        if (typeof MediaRecorder.isTypeSupported === "function" && MediaRecorder.isTypeSupported(mimeType)) {
+          return { mimeType };
+        }
+      }
+
+      return {};
+    }
+
+    async function exportVideo() {
+      if (typeof MediaRecorder === "undefined") {
+        exportStatus.textContent = "MediaRecorder is not available in this browser.";
+        return;
+      }
+
+      exportVideoButton.disabled = true;
+      exportStatus.textContent = "Rendering video...";
+
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = exportSize;
+        canvas.height = exportSize;
+        const ctx = canvas.getContext("2d");
+        const stream = canvas.captureStream(exportFps);
+        const chunks = [];
+        const recorderOptions = getRecorderOptions();
+        const recorder = new MediaRecorder(stream, recorderOptions);
+
+        recorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            chunks.push(event.data);
+          }
+        };
+
+        const stopped = new Promise((resolve) => {
+          recorder.onstop = resolve;
+        });
+
+        recorder.start();
+
+        const totalDurationMs = getExportDurationMs();
+        const startedAt = performance.now();
+
+        await new Promise((resolve) => {
+          function renderFrame(now) {
+            const elapsed = Math.min(now - startedAt, totalDurationMs);
+            const state = getAnimationState(elapsed);
+            const outerRadius = exportSize * 0.35;
+            const borderWidth = exportSize * 0.038;
+            const ringRadius = outerRadius - borderWidth / 2;
+            const centerX = exportSize / 2;
+            const centerY = exportSize / 2;
+
+            drawBackground(ctx, exportSize);
+            drawCircle(ctx, centerX, centerY, outerRadius, borderWidth);
+            drawLetters(ctx, centerX, centerY, ringRadius, state);
+            drawFire(ctx, centerX, centerY, exportSize * 0.1, elapsed);
+
+            if (elapsed < totalDurationMs) {
+              requestAnimationFrame(renderFrame);
+              return;
+            }
+
+            recorder.stop();
+            resolve();
+          }
+
+          requestAnimationFrame(renderFrame);
+        });
+
+        await stopped;
+
+        const blob = new Blob(chunks, { type: recorder.mimeType || "video/webm" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "in-girum-imus-animation.webm";
+        document.body.append(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+        exportStatus.textContent = "Video exported as in-girum-imus-animation.webm";
+      } catch (error) {
+        exportStatus.textContent = "Video export failed in this browser.";
+        console.error(error);
+      } finally {
+        exportVideoButton.disabled = false;
+      }
+    }
+
+    renderRing();
+    window.addEventListener("resize", renderRing);
+    exportVideoButton.addEventListener("click", exportVideo);
+  </script>
+</body>
+</html>

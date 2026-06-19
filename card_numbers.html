@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Card Numbers</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1f2933;
+      --muted: #5a6777;
+      --panel: #ffffff;
+      --border: #d6d9df;
+      --accent: #2f80ed;
+      --shadow: 0 12px 30px rgba(24, 31, 42, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #eef2f6;
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      width: min(96vw, 1180px);
+      margin: 0 auto;
+      padding: 28px 0 36px;
+      display: grid;
+      gap: 18px;
+    }
+
+    header {
+      display: grid;
+      gap: 8px;
+    }
+
+    .byline {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4.8vw, 3rem);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .intro,
+    .controls,
+    .section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .intro {
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .intro h2 {
+      margin: 0;
+      font-size: 1.18rem;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .intro ul {
+      margin: 0;
+      padding-left: 22px;
+      color: var(--ink);
+      line-height: 1.55;
+    }
+
+    .intro li + li {
+      margin-top: 6px;
+    }
+
+    .controls {
+      padding: 18px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .control-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #263241;
+    }
+
+    input {
+      min-height: 40px;
+      border: 1px solid #b8c0cc;
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--ink);
+      font: 500 1rem / 1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      padding: 0 12px;
+    }
+
+    input:focus-visible,
+    button:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      min-height: 40px;
+      border: 1px solid #b8c0cc;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #263241;
+      font: 700 0.95rem / 1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      cursor: pointer;
+      padding: 0 16px;
+    }
+
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+
+    .results {
+      display: grid;
+      gap: 14px;
+    }
+
+    .section {
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .section h2 {
+      margin: 0;
+      font-size: 1.18rem;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .section p {
+      white-space: pre-line;
+    }
+
+    .callout {
+      color: var(--ink);
+      font-weight: 800;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 420px;
+      background: #ffffff;
+    }
+
+    th,
+    td {
+      border: 1px solid #d9dee6;
+      padding: 8px 10px;
+      text-align: right;
+      font-size: 0.95rem;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: right;
+    }
+
+    th {
+      background: #f7f9fc;
+      font-weight: 800;
+    }
+
+    .empty {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    @media (max-width: 860px) {
+      .control-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 560px) {
+      main {
+        width: min(96vw, 1180px);
+      }
+
+      .control-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .intro,
+      .controls,
+      .section {
+        padding: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Card Numbers</h1>
+      <p>Interactive walkthrough of the puzzle logic and the step-by-step elimination performed by the page.</p>
+      <p class="byline">By Rupendra Bandyopadhyay</p>
+    </header>
+
+    <section class="intro" aria-label="Puzzle description">
+      <h2>The Puzzle</h2>
+      <p>You asked for it: Alice, Bernard, and Cheryl, the logic family, are shown three cards, each with a positive whole number.</p>
+      <ul>
+        <li>The sum of the three numbers is 12.</li>
+        <li>The numbers are in strictly increasing order: Alice &lt; Bernard &lt; Cheryl.</li>
+        <li>Each person sees only their own card.</li>
+        <li>Alice says: "I don't know the other two numbers."</li>
+        <li>Bernard says: "I knew you were going to say that. But I also don't know the other two numbers."</li>
+        <li>Cheryl says: "Now I know all three!"</li>
+      </ul>
+      <p>This page lets you change the names and the total, then follows the same elimination logic to show exactly what survives at each step.</p>
+    </section>
+
+    <section class="controls" aria-label="Inputs">
+      <div class="control-grid">
+        <label for="name1">Participant 1
+          <input id="name1" type="text" value="Alice">
+        </label>
+        <label for="name2">Participant 2
+          <input id="name2" type="text" value="Bernard">
+        </label>
+        <label for="name3">Participant 3
+          <input id="name3" type="text" value="Cheryl">
+        </label>
+        <label for="sumInput">Sum of card numbers
+          <input id="sumInput" type="number" min="3" max="100" step="1" value="12">
+        </label>
+      </div>
+      <div class="actions">
+        <button type="button" id="resetButton">Reset Defaults</button>
+        <button type="button" class="primary" id="analyzeButton">Analyze</button>
+      </div>
+    </section>
+
+    <section class="results" id="results" aria-live="polite"></section>
+  </main>
+
+  <script>
+    const defaultNames = ["Alice", "Bernard", "Cheryl"];
+    const defaultSum = 12;
+
+    const nameInputs = [
+      document.getElementById("name1"),
+      document.getElementById("name2"),
+      document.getElementById("name3")
+    ];
+    const sumInput = document.getElementById("sumInput");
+    const analyzeButton = document.getElementById("analyzeButton");
+    const resetButton = document.getElementById("resetButton");
+    const results = document.getElementById("results");
+
+    function listsWithSum(total, nItems) {
+      const values = [];
+
+      function search(start, remaining, current) {
+        if (current.length === nItems) {
+          if (remaining === 0) {
+            values.push([...current]);
+          }
+          return;
+        }
+
+        for (let next = start; next <= total; next += 1) {
+          if (next > remaining) {
+            break;
+          }
+
+          current.push(next);
+          search(next + 1, remaining - next, current);
+          current.pop();
+        }
+      }
+
+      search(1, total, []);
+      return values;
+    }
+
+    function makeRows(combos, participants) {
+      return combos.map((combo, index) => {
+        const row = { Seq: index + 1 };
+        participants.forEach((name, colIndex) => {
+          row[name] = combo[colIndex];
+        });
+        return row;
+      });
+    }
+
+    function uniqueRowsByParticipant(rows, participant) {
+      const counts = new Map();
+      rows.forEach((row) => {
+        counts.set(participantValue(row, participant), (counts.get(participantValue(row, participant)) || 0) + 1);
+      });
+
+      return rows.filter((row) => counts.get(participantValue(row, participant)) === 1);
+    }
+
+    function participantValue(row, participant) {
+      return row[participant];
+    }
+
+    function rowsExcludingSeqs(rows, seqs) {
+      const seqSet = new Set(seqs);
+      return rows.filter((row) => !seqSet.has(row.Seq));
+    }
+
+    function uniqueValues(rows, participant) {
+      return [...new Set(rows.map((row) => participantValue(row, participant)))];
+    }
+
+    function renderTable(rows, headers) {
+      const wrap = document.createElement("div");
+      wrap.className = "table-wrap";
+
+      if (rows.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "empty";
+        empty.textContent = "No rows.";
+        wrap.appendChild(empty);
+        return wrap;
+      }
+
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      const headRow = document.createElement("tr");
+
+      headers.forEach((header) => {
+        const th = document.createElement("th");
+        th.textContent = header;
+        headRow.appendChild(th);
+      });
+
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      rows.forEach((row) => {
+        const tr = document.createElement("tr");
+        headers.forEach((header) => {
+          const td = document.createElement("td");
+          td.textContent = row[header];
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+      wrap.appendChild(table);
+      return wrap;
+    }
+
+    function renderSection(title, bodyText, tableRows, headers, emphasisText) {
+      const section = document.createElement("section");
+      section.className = "section";
+
+      if (title) {
+        const heading = document.createElement("h2");
+        heading.textContent = title;
+        section.appendChild(heading);
+      }
+
+      if (bodyText) {
+        const text = document.createElement("p");
+        text.textContent = bodyText;
+        section.appendChild(text);
+      }
+
+      if (tableRows) {
+        section.appendChild(renderTable(tableRows, headers));
+      }
+
+      if (emphasisText) {
+        const callout = document.createElement("p");
+        callout.className = "callout";
+        callout.textContent = emphasisText;
+        section.appendChild(callout);
+      }
+
+      return section;
+    }
+
+    function normalizedParticipants() {
+      return nameInputs.map((input, index) => input.value.trim() || defaultNames[index]);
+    }
+
+    function analyze() {
+      const participants = normalizedParticipants();
+      const headers = ["Seq", ...participants];
+      const total = Number(sumInput.value);
+
+      results.replaceChildren();
+
+      if (!Number.isInteger(total) || total < 3 || total > 100) {
+        results.appendChild(renderSection("Invalid Input", "The sum of card numbers must be an integer between 3 and 100."));
+        return;
+      }
+
+      const uniqueNames = new Set(participants.map((name) => name.toLowerCase()));
+      if (uniqueNames.size !== participants.length) {
+        results.appendChild(renderSection("Invalid Input", "Participant names must be distinct."));
+        return;
+      }
+
+      const allCombos = listsWithSum(total, 3);
+      const df1 = makeRows(allCombos, participants);
+
+      results.appendChild(
+        renderSection(
+          "All Possible Combinations",
+          "These are all the possible combinations:\n",
+          df1,
+          headers
+        )
+      );
+
+      const p = participants[0];
+      const dfUniqueP = uniqueRowsByParticipant(df1, p);
+      results.appendChild(
+        renderSection(
+          `${p}'s Unique Cases`,
+          `Now let's take a look at what cards for a ${p} would generate a unique possibility.\nThose need to be excluded because ${p} does not know what the others got.`,
+          dfUniqueP,
+          headers
+        )
+      );
+
+      const dropSeqs = dfUniqueP.map((row) => row.Seq);
+      const dfRem = rowsExcludingSeqs(df1, dropSeqs);
+      results.appendChild(
+        renderSection(
+          "Remaining",
+          "Remaining\n",
+          dfRem,
+          headers
+        )
+      );
+
+      const p2 = participants[1];
+      const p2No = uniqueValues(dfUniqueP, p2);
+      const pNo = uniqueValues(dfUniqueP, p);
+      const pNoList = pNo.join(",");
+      const p2NoList = p2No.join(",");
+      const dfRem2Start = dfRem.filter((row) => !p2No.includes(participantValue(row, p2)));
+
+      results.appendChild(
+        renderSection(
+          `${p2}'s First Elimination`,
+          `Now ${p2} says that he/she already knew that ${p} didn't know. That means that\n${p2} knows that ${p} couldn't have ${pNoList}.\nNote that, ${p2} had ${p2NoList} when ${p} had ${pNoList}.\nTherefore ${p2} could not be sure beforehand that ${p} didn't know all if he/she had ${p2NoList}.\nSo we will also eliminate cases when ${p2} has ${p2NoList}.`,
+          dfRem2Start,
+          headers
+        )
+      );
+
+      const dfUniqueP2 = uniqueRowsByParticipant(df1, p2);
+      results.appendChild(
+        renderSection(
+          `${p2}'s Original Unique Cases`,
+          `${p2} also doesn't know all the numbers. So we will have to find and eliminate all original cases\nwhere ${p2} had a number unique to all possibilities. These are:`,
+          dfUniqueP2,
+          headers
+        )
+      );
+
+      const uniqueP2Seqs = new Set(dfUniqueP2.map((row) => row.Seq));
+      const dfRem2 = dfRem2Start.filter((row) => !uniqueP2Seqs.has(row.Seq));
+      results.appendChild(
+        renderSection(
+          "After Excluding Those",
+          "After excluding these, we are left with:",
+          dfRem2,
+          headers
+        )
+      );
+
+      const p3 = participants[2];
+      const dfUniqueP3 = uniqueRowsByParticipant(df1, p3);
+      results.appendChild(
+        renderSection(
+          `${p3}'s Original Unique Cases`,
+          `At this, ${p3} says that he/she knows all the numbers now, implying she did not know before.\nSo, we will also eliminate all possibilities from the original set where ${p3}'s number was\nunique. Those are:`,
+          dfUniqueP3,
+          headers
+        )
+      );
+
+      const uniqueP3Seqs = new Set(dfUniqueP3.map((row) => row.Seq));
+      const dfRem3 = dfRem2.filter((row) => !uniqueP3Seqs.has(row.Seq));
+      results.appendChild(
+        renderSection(
+          "Remaining After Third Elimination",
+          "So, now we are left with:",
+          dfRem3,
+          headers
+        )
+      );
+
+      if (dfRem3.length === 1) {
+        results.appendChild(
+          renderSection(
+            "Conclusion",
+            "We are left with just one possibility, which is the answer",
+            dfRem3,
+            headers
+          )
+        );
+        return;
+      }
+
+      const dfUniqueP3Final = uniqueRowsByParticipant(dfRem3, p3);
+      if (dfUniqueP3Final.length > 0) {
+        results.appendChild(
+          renderSection(
+            "Final Unique Cases",
+            `We have multiple possibilities still left. But if among these one number for ${p3}\nindicate a unique possibility, that would work. Because at this point ${p3} knows.`,
+            dfUniqueP3Final,
+            headers
+          )
+        );
+        return;
+      }
+
+      results.appendChild(
+        renderSection(
+          "Final Check",
+          `We have multiple possibilities still left. But if among these one number for ${p3}\nindicate a unique possibility, that would work. Because at this point ${p3} knows.`,
+          null,
+          null,
+          "No such cases"
+        )
+      );
+    }
+
+    resetButton.addEventListener("click", () => {
+      nameInputs.forEach((input, index) => {
+        input.value = defaultNames[index];
+      });
+      sumInput.value = defaultSum;
+      analyze();
+    });
+
+    analyzeButton.addEventListener("click", analyze);
+    nameInputs.forEach((input) => {
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          analyze();
+        }
+      });
+    });
+    sumInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        analyze();
+      }
+    });
+
+    analyze();
+  </script>
+</body>
+</html>
