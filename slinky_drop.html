@@ -1,0 +1,231 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Falling Slinky</title>
+  <link rel="icon" type="image/png" href="Wise_Man_Icon.png">
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\(", "\\)"], ["$", "$"]],
+        displayMath: [["\\[", "\\]"]]
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  <style>
+    body { font-family: sans-serif; text-align: center; background: #f7f7f7; color: #1f2933; }
+    canvas { background: white; border: 1px solid #ccc; }
+    button { margin: 10px; padding: 8px 14px; font-size: 16px; }
+    .site-footer {
+      margin-top: 18px;
+      color: #5a6777;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .site-footer a {
+      color: #2f80ed;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .site-footer a:hover,
+    .site-footer a:focus-visible {
+      text-decoration: underline;
+    }
+    .formula-panel {
+      max-width: 500px;
+      margin: 16px auto 0;
+      padding: 12px 14px;
+      background: #ffffff;
+      border: 1px solid #d6d9df;
+      text-align: left;
+      line-height: 1.55;
+    }
+    .formula-panel h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+    .formula-panel p {
+      margin: 6px 0;
+    }
+    .formula-panel code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 0.95em;
+    }
+  </style>
+</head>
+<body>
+  <h2>Falling Slinky Simulation</h2>
+  <button onclick="dropSlinky()">Drop</button>
+  <button onclick="reset()">Reset</button>
+  <label for="speedSlider">Speed</label>
+  <input id="speedSlider" type="range" min="0.4" max="3.0" step="0.1" value="3.0">
+  <span id="speedValue">3.0×</span>
+  <br>
+  <canvas id="c" width="500" height="620"></canvas>
+  <section class="formula-panel">
+    <h3>Approximate Formulas Used</h3>
+    <p>\[ T_c \approx \sqrt{\frac{2L}{g}} \]</p>
+    <p>Collapse time approximation, where \(L\) is the initial hanging slinky height and \(g\) is the animation gravity scale.</p>
+    <p>\[ y_{\text{top}}(t) = y_0 + D \left(\frac{t}{T_c}\right)^2, \qquad 0 \le t \le T_c \]</p>
+    <p>Top motion during collapse, where \(D = L - H_c\) and \(H_c\) is the compressed height.</p>
+    <p>\[ v_c = \frac{2D}{T_c} \]</p>
+    <p>Approximate handoff speed into the rigid falling phase.</p>
+    <p>\[ y(t) = y_c + v_c t + \frac{1}{2} g t^2 \]</p>
+    <p>Rigid-body fall after the slinky has collapsed.</p>
+  </section>
+  <footer class="site-footer">
+    Rupendra Bandyopadhyay ·
+    <a href="https://www.linkedin.com/in/rupendra/" target="_blank" rel="noreferrer">LinkedIn</a>
+  </footer>
+
+<script>
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+const slinkyImage = new Image();
+const speedSlider = document.getElementById("speedSlider");
+const speedValue = document.getElementById("speedValue");
+let slinkyReady = false;
+
+const topAnchorY = 72;
+const initialHeight = canvas.height * 0.5;
+const compressedHeight = 118;
+const g = 180;
+const initialTop = topAnchorY + 16;
+const initialBottom = initialTop + initialHeight;
+const collapseDistance = initialHeight - compressedHeight;
+const collapseTime = Math.sqrt((2 * initialHeight) / g);
+const collapseSpeed = (2 * collapseDistance) / collapseTime;
+const slinkyDrawWidth = 190;
+const groundY = canvas.height - 44;
+
+let phase = "held";
+let phaseStart = 0;
+let displayTop = initialTop;
+let displayBottom = initialBottom;
+let speedMultiplier = 3;
+
+slinkyImage.src = "slinky-realistic-white.png?v=1";
+slinkyImage.onload = () => {
+  slinkyReady = true;
+};
+
+speedSlider.addEventListener("input", () => {
+  speedMultiplier = Number(speedSlider.value);
+  speedValue.textContent = `${speedMultiplier.toFixed(1)}×`;
+});
+
+function reset() {
+  phase = "held";
+  phaseStart = performance.now();
+  displayTop = initialTop;
+  displayBottom = initialBottom;
+}
+
+function dropSlinky() {
+  if (phase === "held") {
+    phase = "collapse";
+    phaseStart = performance.now();
+  }
+}
+
+function update(now) {
+  if (phase === "held") {
+    displayTop = initialTop;
+    displayBottom = initialBottom;
+    return;
+  }
+
+  if (phase === "collapse") {
+    const elapsed = ((now - phaseStart) / 1000) * speedMultiplier;
+    const progress = Math.min(elapsed / collapseTime, 1);
+    const fall = collapseDistance * progress * progress;
+    displayTop = initialTop + fall;
+    displayBottom = initialBottom;
+
+    if (progress >= 1) {
+      phase = "fall";
+      phaseStart = now;
+      displayTop = initialBottom - compressedHeight;
+      displayBottom = initialBottom;
+    }
+
+    return;
+  }
+
+  const elapsed = ((now - phaseStart) / 1000) * speedMultiplier;
+  const rigidShift = collapseSpeed * elapsed + 0.5 * g * elapsed * elapsed;
+  const candidateBottom = initialBottom + rigidShift;
+
+  if (candidateBottom >= groundY) {
+    displayBottom = groundY;
+    displayTop = groundY - compressedHeight;
+    phase = "landed";
+    return;
+  }
+
+  displayTop = initialBottom - compressedHeight + rigidShift;
+  displayBottom = candidateBottom;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const x = canvas.width / 2;
+  const top = displayTop;
+  const bottom = displayBottom;
+  const drawHeight = Math.max(bottom - top, 80);
+
+  ctx.strokeStyle = "#6b7280";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(60, groundY);
+  ctx.lineTo(canvas.width - 60, groundY);
+  ctx.stroke();
+
+  ctx.strokeStyle = "#666";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(x, 68);
+  if (phase === "held" || phase === "collapse") {
+    ctx.lineTo(x, Math.min(top + 10, topAnchorY + 24));
+    ctx.stroke();
+  }
+
+  if (slinkyReady) {
+    ctx.drawImage(slinkyImage, x - slinkyDrawWidth / 2, top, slinkyDrawWidth, drawHeight);
+  } else {
+    const fallbackCoils = 26;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    for (let i = 0; i < fallbackCoils; i++) {
+      const progress = i / (fallbackCoils - 1);
+      const wiggle = Math.sin(i * 1.4) * 35;
+      const px = x + wiggle;
+      const py = top + drawHeight * progress;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "#374151";
+  ctx.font = "16px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("The top falls first while the bottom stays nearly fixed.", canvas.width / 2, 36);
+  ctx.fillText("Then the compressed slinky drops as a whole object.", canvas.width / 2, 56);
+  ctx.textAlign = "start";
+}
+
+function animate(now) {
+  update(now);
+  draw();
+  requestAnimationFrame(animate);
+}
+
+reset();
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
