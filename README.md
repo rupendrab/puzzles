@@ -13,12 +13,14 @@ The main entry point is [index.html](/Users/rupendrabandyopadhyay/Documents/Puzz
 - [igni.html](/Users/rupendrabandyopadhyay/Documents/Puzzles/igni.html): Animated circular-text fire page based on the palindrome `In girum imus nocte et consumimur igni`, with built-in video export.
 - [palindromes.html](/Users/rupendrabandyopadhyay/Documents/Puzzles/palindromes.html): Interactive palindrome finder for sentence input.
 - [rotating_circles.html](/Users/rupendrabandyopadhyay/Documents/Puzzles/rotating_circles.html): Small-circle rolling simulation inside or outside a larger circle.
+- [slinky_drop.html](/Users/rupendrabandyopadhyay/Documents/Puzzles/slinky_drop.html): Falling slinky visualization with a two-phase collapse-and-drop animation and explanatory formulas.
 - [trees.html](/Users/rupendrabandyopadhyay/Documents/Puzzles/trees.html): Interactive tree grid puzzle.
 
 ## Supporting Files
 
 - [card_numbers.py](/Users/rupendrabandyopadhyay/Documents/Puzzles/card_numbers.py) and [palindromes.py](/Users/rupendrabandyopadhyay/Documents/Puzzles/palindromes.py): Python helpers related to the corresponding puzzle pages.
 - `chess-pieces/`: SVG assets used by the chessboard page.
+- [slinky-realistic-white.png](/Users/rupendrabandyopadhyay/Documents/Puzzles/slinky-realistic-white.png): Slinky image asset used by the falling slinky page.
 - [Trees.svg](/Users/rupendrabandyopadhyay/Documents/Puzzles/Trees.svg), [Trees_Initial.svg](/Users/rupendrabandyopadhyay/Documents/Puzzles/Trees_Initial.svg), [Area.svg](/Users/rupendrabandyopadhyay/Documents/Puzzles/Area.svg): Drawing assets.
 - [Hex_Question.ggb](/Users/rupendrabandyopadhyay/Documents/Puzzles/Hex_Question.ggb), [Hex_Answer.ggb](/Users/rupendrabandyopadhyay/Documents/Puzzles/Hex_Answer.ggb), [Hex.pdf](/Users/rupendrabandyopadhyay/Documents/Puzzles/Hex.pdf): Hex puzzle source and export files.
 
