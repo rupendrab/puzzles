@@ -7,6 +7,7 @@ The main entry point is [index.html](/Users/rupendrabandyopadhyay/Documents/Puzz
 ## Contents
 
 - [index.html](/Users/rupendrabandyopadhyay/Documents/Puzzles/index.html): Landing page for the puzzle collection.
+- [3d_view.html](/Users/rupendrabandyopadhyay/Documents/Puzzles/3d_view.html): Interactive 3D reconstruction of the object from the front and side reference drawing, including the cube-and-wedge geometry used to build the final object.
 - [chessboard.html](/Users/rupendrabandyopadhyay/Documents/Puzzles/chessboard.html): Chessboard page using the SVG chess piece assets in `chess-pieces/`.
 - [card_numbers.html](/Users/rupendrabandyopadhyay/Documents/Puzzles/card_numbers.html): Interactive page for the card numbers puzzle.
 - [earth_rope.html](/Users/rupendrabandyopadhyay/Documents/Puzzles/earth_rope.html): Rope-to-space visualization. This page uses version-pinned CDN scripts for React, Babel, and Tailwind.
@@ -19,6 +20,7 @@ The main entry point is [index.html](/Users/rupendrabandyopadhyay/Documents/Puzz
 ## Supporting Files
 
 - [card_numbers.py](/Users/rupendrabandyopadhyay/Documents/Puzzles/card_numbers.py) and [palindromes.py](/Users/rupendrabandyopadhyay/Documents/Puzzles/palindromes.py): Python helpers related to the corresponding puzzle pages.
+- [F_and_S.jpeg](/Users/rupendrabandyopadhyay/Documents/Puzzles/F_and_S.jpeg): Front-and-side reference image used for the 3D reconstruction pages.
 - `chess-pieces/`: SVG assets used by the chessboard page.
 - [slinky-realistic-white.png](/Users/rupendrabandyopadhyay/Documents/Puzzles/slinky-realistic-white.png): Slinky image asset used by the falling slinky page.
 - [Trees.svg](/Users/rupendrabandyopadhyay/Documents/Puzzles/Trees.svg), [Trees_Initial.svg](/Users/rupendrabandyopadhyay/Documents/Puzzles/Trees_Initial.svg), [Area.svg](/Users/rupendrabandyopadhyay/Documents/Puzzles/Area.svg): Drawing assets.

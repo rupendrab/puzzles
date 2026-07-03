@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Single Cube Viewer</title>
+    <style> 
+        body { margin: 0; overflow: hidden; font-family: sans-serif; } 
+        canvas { width: 100%; height: 100%; display: block; }
+        #instructions {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 10px 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            pointer-events: none; /* Let clicks pass through to the canvas */
+        }
+    </style>
+</head>
+<body>
+    <div id="instructions">
+        <strong>Controls:</strong><br>
+        • Left-Click & Drag: Rotate manually<br>
+        • Scroll Wheel: Zoom in/out<br>
+        • Left-Click once (tap): Pause/Restart auto-rotation<br>
+        • Shape used: four cubes plus wedges from the upper back cube to the original cube and the right back cube
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
+        let isRotating = true;
+        let pointerDown = false;
+        let dragDistance = 0;
+        let pointerStart = { x: 0, y: 0 };
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f0f0);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(4.6, 4.1, 5.6);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.target.set(0, 0.5, 0);
+        controls.update();
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+        dirLight.position.set(5, 8, 6);
+        scene.add(dirLight);
+
+        function pushQuad(positions, a, b, c, d) {
+            positions.push(...a, ...b, ...c, ...a, ...c, ...d);
+        }
+
+        function pushTriangle(positions, a, b, c) {
+            positions.push(...a, ...b, ...c);
+        }
+
+        function addCube(positions, xOffset, yOffset, zOffset) {
+            // Bottom face corners
+            const A = [-0.5 + xOffset, 0.0 + yOffset, -0.5 + zOffset];
+            const B = [ 0.5 + xOffset, 0.0 + yOffset, -0.5 + zOffset];
+            const C = [ 0.5 + xOffset, 0.0 + yOffset,  0.5 + zOffset];
+            const D = [-0.5 + xOffset, 0.0 + yOffset,  0.5 + zOffset];
+
+            // Top face corners
+            const E = [-0.5 + xOffset, 1.0 + yOffset, -0.5 + zOffset];
+            const F = [ 0.5 + xOffset, 1.0 + yOffset, -0.5 + zOffset];
+            const G = [ 0.5 + xOffset, 1.0 + yOffset,  0.5 + zOffset];
+            const H = [-0.5 + xOffset, 1.0 + yOffset,  0.5 + zOffset];
+
+            pushQuad(positions, D, C, B, A); // bottom
+            pushQuad(positions, A, B, F, E); // front
+            pushQuad(positions, B, C, G, F); // right
+            pushQuad(positions, C, D, H, G); // back
+            pushQuad(positions, D, A, E, H); // left
+            pushQuad(positions, E, F, G, H); // top
+        }
+
+        function addWedge(positions) {
+            const A = [0.5, 1.0, 0.5];
+            const B = [1.5, 1.0, 0.5];
+            const C = [1.5, 1.0, 1.5];
+            const D = [0.5, 1.0, 1.5];
+            const E = [0.5, 2.0, 0.5];
+            const F = [0.5, 2.0, 1.5];
+
+            // Front and back triangular faces of the wedge
+            pushTriangle(positions, A, B, E);
+            pushTriangle(positions, D, F, C);
+
+            // Sloped top face descending from the upper cube to the right cube
+            pushQuad(positions, E, B, C, F);
+
+            // Right face closes the prism at the low end
+            pushQuad(positions, B, A, D, C);
+        }
+
+        function addFrontLeftWedge(positions) {
+            const A = [-0.5, 1.0, -0.5];
+            const B = [0.5, 1.0, -0.5];
+            const C = [0.5, 1.0, 0.5];
+            const D = [-0.5, 1.0, 0.5];
+            const E = [0.5, 2.0, 0.5];
+            const F = [-0.5, 2.0, 0.5];
+
+            // Left and right triangular faces of the wedge
+            pushTriangle(positions, A, B, E);
+            pushTriangle(positions, A, F, D);
+
+            // Sloped top face descending from the upper cube toward the original cube
+            pushQuad(positions, F, E, B, A);
+
+            // Front face closes the prism at the low end
+            pushQuad(positions, A, B, C, D);
+        }
+
+
+        function buildCubeGeometry() {
+            const positions = [];
+
+            addCube(positions, 0.0, 0.0, 0.0); // original cube
+            addCube(positions, 0.0, 0.0, 1.0); // cube behind
+            addCube(positions, 1.0, 0.0, 1.0); // connecting cube to the right
+            addCube(positions, 0.0, 1.0, 1.0); // cube above the back cube
+            addFrontLeftWedge(positions); // sloped piece from the upper cube down to the original cube
+            addWedge(positions); // sloped piece from the upper cube down to the right cube
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+            geometry.computeVertexNormals();
+            return geometry;
+        }
+
+        const geometry = buildCubeGeometry();
+
+        const material = new THREE.MeshStandardMaterial({
+            color: 0x4d8bd6,
+            roughness: 0.5,
+            metalness: 0.05
+        });
+
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+
+        const wireframeGeo = new THREE.EdgesGeometry(geometry, 1);
+        const wireframeMat = new THREE.LineBasicMaterial({ color: 0x111111 });
+        const wireframe = new THREE.LineSegments(wireframeGeo, wireframeMat);
+        scene.add(wireframe);
+
+        const floor = new THREE.GridHelper(8, 8, 0xb7b7b7, 0xd9d9d9);
+        floor.position.y = -0.01;
+        scene.add(floor);
+
+        renderer.domElement.addEventListener("pointerdown", (event) => {
+            pointerDown = true;
+            dragDistance = 0;
+            pointerStart = { x: event.clientX, y: event.clientY };
+        });
+
+        renderer.domElement.addEventListener("pointermove", (event) => {
+            if (!pointerDown) {
+                return;
+            }
+
+            dragDistance = Math.max(
+                dragDistance,
+                Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y)
+            );
+        });
+
+        renderer.domElement.addEventListener("pointerup", () => {
+            if (pointerDown && dragDistance < 5) {
+                isRotating = !isRotating;
+            }
+
+            pointerDown = false;
+        });
+
+        renderer.domElement.addEventListener("pointerleave", () => {
+            pointerDown = false;
+        });
+
+        // Handle window resizing dynamically
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (isRotating) {
+                mesh.rotation.y += 0.003;
+                wireframe.rotation.y += 0.003;
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
