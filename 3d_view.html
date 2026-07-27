@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Single Cube Viewer</title>
+    <title>3D View</title>
     <style> 
         body { margin: 0; overflow: hidden; font-family: sans-serif; } 
         canvas { width: 100%; height: 100%; display: block; }
@@ -23,7 +23,7 @@
         • Left-Click & Drag: Rotate manually<br>
         • Scroll Wheel: Zoom in/out<br>
         • Left-Click once (tap): Pause/Restart auto-rotation<br>
-        • Shape used: four cubes plus wedges from the upper back cube to the original cube and the right back cube
+        • Outline shows only selected outer edges, not internal wedge construction edges
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -62,6 +62,10 @@
 
         function pushTriangle(positions, a, b, c) {
             positions.push(...a, ...b, ...c);
+        }
+
+        function addEdge(positions, a, b) {
+            positions.push(...a, ...b);
         }
 
         function addCube(positions, xOffset, yOffset, zOffset) {
@@ -140,7 +144,55 @@
             return geometry;
         }
 
+        function buildVisibleEdgesGeometry() {
+            const positions = [];
+
+            const p000 = [-0.5, 0.0, -0.5];
+            const p100 = [ 0.5, 0.0, -0.5];
+            const p001 = [-0.5, 0.0,  0.5];
+            const p011 = [-0.5, 1.0,  0.5];
+            const p101 = [ 0.5, 0.0,  0.5];
+            const p111 = [ 0.5, 1.0,  0.5];
+
+            const p002 = [-0.5, 0.0,  1.5];
+            const p012 = [-0.5, 1.0,  1.5];
+            const p022 = [-0.5, 2.0,  1.5];
+            const p102 = [ 0.5, 0.0,  1.5];
+            const p112 = [ 0.5, 1.0,  1.5];
+            const p122 = [ 0.5, 2.0,  1.5];
+
+            const p202 = [ 1.5, 0.0,  1.5];
+            const p212 = [ 1.5, 1.0,  1.5];
+            const p201 = [ 1.5, 0.0,  0.5];
+            const p211 = [ 1.5, 1.0,  0.5];
+
+            // Lower outer footprint and vertical corners.
+            addEdge(positions, p000, p100);
+            addEdge(positions, p100, p201);
+            addEdge(positions, p201, p202);
+            addEdge(positions, p202, p002);
+            addEdge(positions, p002, p001);
+            addEdge(positions, p001, p000);
+
+            addEdge(positions, p000, p011);
+            addEdge(positions, p201, p211);
+            addEdge(positions, p202, p212);
+            addEdge(positions, p002, p022);
+
+            // Exposed roof and ridge edges only.
+            addEdge(positions, p011, p022);
+            addEdge(positions, p022, p122);
+            addEdge(positions, p122, p211);
+            addEdge(positions, p122, p212);
+            addEdge(positions, p011, p122);
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+            return geometry;
+        }
+
         const geometry = buildCubeGeometry();
+        const visibleEdgesGeometry = buildVisibleEdgesGeometry();
 
         const material = new THREE.MeshStandardMaterial({
             color: 0x4d8bd6,
@@ -148,13 +200,15 @@
             metalness: 0.05
         });
 
-        const mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
+        const model = new THREE.Group();
+        scene.add(model);
 
-        const wireframeGeo = new THREE.EdgesGeometry(geometry, 1);
-        const wireframeMat = new THREE.LineBasicMaterial({ color: 0x111111 });
-        const wireframe = new THREE.LineSegments(wireframeGeo, wireframeMat);
-        scene.add(wireframe);
+        const mesh = new THREE.Mesh(geometry, material);
+        model.add(mesh);
+
+        const visibleEdgesMat = new THREE.LineBasicMaterial({ color: 0x111111 });
+        const visibleEdges = new THREE.LineSegments(visibleEdgesGeometry, visibleEdgesMat);
+        model.add(visibleEdges);
 
         const floor = new THREE.GridHelper(8, 8, 0xb7b7b7, 0xd9d9d9);
         floor.position.y = -0.01;
@@ -201,8 +255,7 @@
             requestAnimationFrame(animate);
             
             if (isRotating) {
-                mesh.rotation.y += 0.003;
-                wireframe.rotation.y += 0.003;
+                model.rotation.y += 0.003;
             }
 
             controls.update();
